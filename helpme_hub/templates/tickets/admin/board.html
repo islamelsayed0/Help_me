@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ticket Board - Admin - HelpMe Hub{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kanban-column {
+        min-height: 500px;
+        background-color: var(--light-card-hover, #F1F5F9);
+    }
+    .dark .kanban-column {
+        background-color: var(--dark-card-hover, #1E293B);
+    }
+    .ticket-card {
+        cursor: move;
+        transition: transform 0.2s;
+    }
+    .ticket-card:hover {
+        transform: translateY(-2px);
+    }
+    .ticket-card.dragging {
+        opacity: 0.5;
+    }
+    .kanban-column.drag-over {
+        background-color: var(--light-blue, #2563EB);
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto mt-8">
+    <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-6">Ticket Board</h1>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Total</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.total }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Open</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.open }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">In Progress</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.in_progress }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Resolved</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.resolved }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Closed</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.closed }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Unassigned</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.unassigned }}</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-6 flex gap-4">
+        <a href="{% url 'tickets:admin_board' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if not assignee_filter %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            All Tickets
+        </a>
+        <a href="{% url 'tickets:admin_board' %}?assignee=me" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if assignee_filter == 'me' %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            My Tickets
+        </a>
+        <a href="{% url 'tickets:admin_board' %}?assignee=unassigned" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if assignee_filter == 'unassigned' %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            Unassigned
+        </a>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Open Column -->
+        <div class="kanban-column rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]" data-status="open">
+            <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-4">
+                Open ({{ tickets_by_status.open|length }})
+            </h3>
+            <div class="space-y-3" id="open-tickets">
+                {% for ticket in tickets_by_status.open %}
+                    {% include 'tickets/admin/ticket_card.html' with ticket=ticket %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- In Progress Column -->
+        <div class="kanban-column rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]" data-status="in_progress">
+            <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-4">
+                In Progress ({{ tickets_by_status.in_progress|length }})
+            </h3>
+            <div class="space-y-3" id="in-progress-tickets">
+                {% for ticket in tickets_by_status.in_progress %}
+                    {% include 'tickets/admin/ticket_card.html' with ticket=ticket %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Resolved Column -->
+        <div class="kanban-column rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]" data-status="resolved">
+            <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-4">
+                Resolved ({{ tickets_by_status.resolved|length }})
+            </h3>
+            <div class="space-y-3" id="resolved-tickets">
+                {% for ticket in tickets_by_status.resolved %}
+                    {% include 'tickets/admin/ticket_card.html' with ticket=ticket %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Closed Column -->
+        <div class="kanban-column rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]" data-status="closed">
+            <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-4">
+                Closed ({{ tickets_by_status.closed|length }})
+            </h3>
+            <div class="space-y-3" id="closed-tickets">
+                {% for ticket in tickets_by_status.closed %}
+                    {% include 'tickets/admin/ticket_card.html' with ticket=ticket %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/ticket_board.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat Inbox - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto mt-8">
+    <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-6">Chat Inbox</h1>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Total Chats</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ total_chats }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Unassigned</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ unassigned_count }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Unread Messages</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ unread_total }}</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-6 flex flex-wrap gap-4">
+        <a href="{% url 'chats:admin_inbox' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if not status_filter %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            All Status
+        </a>
+        <a href="{% url 'chats:admin_inbox' %}?status=active" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if status_filter == 'active' %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            Active
+        </a>
+        <a href="{% url 'chats:admin_inbox' %}?assigned=unassigned" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if assigned_filter == 'unassigned' %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            Unassigned
+        </a>
+        <a href="{% url 'chats:admin_inbox' %}?assigned=me" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if assigned_filter == 'me' %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            My Chats
+        </a>
+        <a href="{% url 'chats:admin_inbox' %}?unread=true" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if unread_only %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            Unread Only
+        </a>
+    </div>
+
+    <!-- Chat List -->
+    {% if chats %}
+        <div class="space-y-4">
+            {% for chat in chats %}
+                <a href="{% url 'chats:admin_chat_detail' chat.id %}" class="block bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark">
+                                    Chat #{{ chat.id }} - {{ chat.user.email }}
+                                </h3>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full {% if chat.status == 'active' %}bg-success-bg-light dark:bg-success-bg text-success-text-light dark:text-success-text{% elif chat.status == 'escalated' %}bg-warning-bg-light dark:bg-warning-bg text-warning-text-light dark:text-warning-text{% elif chat.status == 'resolved' %}bg-text-muted-light dark:bg-text-muted-dark text-text-secondary-light dark:text-text-secondary-dark{% else %}bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text{% endif %}">
+                                    {{ chat.get_status_display }}
+                                </span>
+                                {% if chat.assigned_to %}
+                                    <span class="text-xs text-text-muted-light dark:text-text-muted-dark">
+                                        Assigned to: {{ chat.assigned_to.email }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-xs text-warning-text-light dark:text-warning-text">
+                                        Unassigned
+                                    </span>
+                                {% endif %}
+                            </div>
+                            {% if chat.last_message_time %}
+                                <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                    Last message: {{ chat.last_message_time|timesince }} ago
+                                </p>
+                            {% endif %}
+                        </div>
+                        {% if chat.unread_count > 0 %}
+                            <div class="ml-4">
+                                <span class="inline-flex items-center justify-center px-3 py-1 text-xs font-bold text-white bg-light-blue dark:bg-calm-blue rounded-full">
+                                    {{ chat.unread_count }}
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-12 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow text-center">
+            <p class="text-text-secondary-light dark:text-text-secondary-dark">No chats found.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

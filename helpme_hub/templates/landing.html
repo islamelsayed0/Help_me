@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+
+{% block title %}HelpMe Hub - IT Support Portal{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative py-20 md:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <!-- Background Layers -->
+    <div class="absolute inset-0 z-0">
+        <!-- Gradient background -->
+        <div class="absolute inset-0 bg-gradient-to-br from-light-blue/45 via-purple-accent/30 to-light-blue/45 dark:from-calm-blue/30 dark:via-purple-accent/20 dark:to-calm-blue/30"></div>
+        
+        <!-- Wave patterns -->
+        <div class="absolute inset-0 wave-pattern"></div>
+        
+        <!-- Sparkles -->
+        <div class="absolute inset-0 sparkles"></div>
+        
+        <!-- Floating code bubbles -->
+        <div class="code-bubble code-bubble-1">
+            <pre class="text-xs font-mono text-gray-700 dark:text-gray-300"><code>user = await getUser();
+if (user.role == 'Admin') {
+  showDashboard();
+}</code></pre>
+        </div>
+        
+        <div class="code-bubble code-bubble-2">
+            <pre class="text-xs font-mono text-gray-700 dark:text-gray-300"><code>const data = fetchReports();
+handleError(error);</code></pre>
+        </div>
+        
+        <div class="code-bubble code-bubble-3">
+            <pre class="text-xs font-mono text-gray-700 dark:text-gray-300"><code>ticket = createTicket(
+  user=user,
+  status='open'
+)</code></pre>
+        </div>
+        
+        <!-- Final overlay for text readability -->
+        <div class="absolute inset-0 bg-gradient-to-b from-light-bg/30 via-light-bg/20 to-light-bg/30 dark:from-deep-dark/25 dark:via-deep-dark/15 dark:to-deep-dark/25" style="z-index: 2;"></div>
+    </div>
+    
+    <!-- Content -->
+    <div class="relative z-10 max-w-7xl mx-auto">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary-light dark:text-text-primary-dark mb-6">
+                HelpMe Hub
+            </h1>
+            <p class="text-xl md:text-2xl text-text-primary-light dark:text-text-primary-dark mb-4 max-w-3xl mx-auto font-semibold">
+                Enterprise IT Support Portal
+            </p>
+            <p class="text-lg text-text-secondary-light dark:text-text-secondary-dark mb-8 max-w-2xl mx-auto">
+                Streamline your IT support with self-service help, intelligent chat assistance, and comprehensive ticket management.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{% url 'accounts:register' %}" class="inline-flex items-center justify-center px-8 py-3 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium rounded-md transition-colors shadow-lg">
+                    Get Started
+                </a>
+                <a href="{% url 'accounts:login' %}" class="inline-flex items-center justify-center px-8 py-3 bg-light-card dark:bg-dark-card hover:bg-light-card-hover dark:hover:bg-dark-card-hover border-2 border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] text-text-primary-light dark:text-text-primary-dark font-medium rounded-md transition-colors light-card-shadow">
+                    Sign In
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-16 md:py-24 bg-light-bg dark:bg-deep-dark">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                Powerful Features for IT Support
+            </h2>
+            <p class="text-lg text-text-secondary-light dark:text-text-secondary-dark max-w-2xl mx-auto">
+                Everything you need to manage IT support efficiently
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Feature 1: Self-Service Help -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="mb-4">
+                    <svg class="h-12 w-12 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">
+                    Self-Service Help
+                </h3>
+                <p class="text-text-secondary-light dark:text-text-secondary-dark">
+                    Empower users with knowledge base articles and self-service solutions to resolve common issues quickly.
+                </p>
+            </div>
+            
+            <!-- Feature 2: Live Admin Chat -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="mb-4">
+                    <svg class="h-12 w-12 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">
+                    Live Admin Chat
+                </h3>
+                <p class="text-text-secondary-light dark:text-text-secondary-dark">
+                    AI-powered chatbot provides instant assistance, with seamless escalation to human admins when needed.
+                </p>
+            </div>
+            
+            <!-- Feature 3: Ticket Management -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="mb-4">
+                    <svg class="h-12 w-12 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">
+                    Ticket Management
+                </h3>
+                <p class="text-text-secondary-light dark:text-text-secondary-dark">
+                    Track and manage support tickets with a simple board interface. Admins can resolve issues with detailed notes.
+                </p>
+            </div>
+            
+            <!-- Feature 4: Group Organization -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="mb-4">
+                    <svg class="h-12 w-12 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">
+                    Group Organization
+                </h3>
+                <p class="text-text-secondary-light dark:text-text-secondary-dark">
+                    Organize users by groups or departments with approval workflows. Data is securely isolated by group.
+                </p>
+            </div>
+            
+            <!-- Feature 5: Role-Based Access -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="mb-4">
+                    <svg class="h-12 w-12 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">
+                    Role-Based Access
+                </h3>
+                <p class="text-text-secondary-light dark:text-text-secondary-dark">
+                    Secure access control with user, admin, and superadmin roles. Each role has appropriate permissions.
+                </p>
+            </div>
+            
+            <!-- Feature 6: Audit Logs -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="mb-4">
+                    <svg class="h-12 w-12 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">
+                    Audit Logs
+                </h3>
+                <p class="text-text-secondary-light dark:text-text-secondary-dark">
+                    Comprehensive audit logging for superadmins to track system activity and maintain security compliance.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section id="about" class="py-16 md:py-24 bg-light-bg dark:bg-deep-dark">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <!-- Left Column: Text Content -->
+            <div>
+                <h2 class="text-3xl md:text-4xl font-bold text-text-primary-light dark:text-text-primary-dark mb-6">
+                    About HelpMe Hub
+                </h2>
+                <div class="space-y-4">
+                    <p class="text-lg text-text-secondary-light dark:text-text-secondary-dark leading-relaxed">
+                        HelpMe Hub is a modern IT support portal designed for businesses and organizations of all sizes. 
+                        We understand that IT support requires a balance of <strong class="text-text-primary-light dark:text-text-primary-dark">efficiency</strong>, 
+                        <strong class="text-text-primary-light dark:text-text-primary-dark">security</strong>, and <strong class="text-text-primary-light dark:text-text-primary-dark">ease of use</strong>.
+                    </p>
+                    <p class="text-lg text-text-secondary-light dark:text-text-secondary-dark leading-relaxed">
+                        Our platform enables organizations to organize support requests by groups or departments, provide instant AI-powered assistance, 
+                        and manage tickets through an intuitive interface. With role-based access control and comprehensive audit logging, 
+                        HelpMe Hub ensures your IT support operations are both effective and secure.
+                    </p>
+                    <p class="text-lg text-text-secondary-light dark:text-text-secondary-dark leading-relaxed">
+                        Built with enterprise-grade security and a calm, professional interface, HelpMe Hub makes IT support 
+                        management simple for administrators while providing a reassuring experience for end users.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Right Column: Visual Element -->
+            <div class="flex justify-center md:justify-end">
+                <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] light-card-shadow max-w-md">
+                    <div class="text-center">
+                        <div class="mb-6 flex justify-center">
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-light-blue dark:bg-calm-blue opacity-20 rounded-full blur-2xl"></div>
+                                <svg class="h-24 w-24 text-light-blue dark:text-calm-blue relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-semibold text-text-primary-light dark:text-text-primary-dark mb-3">
+                            Trusted by Organizations
+                        </h3>
+                        <p class="text-text-secondary-light dark:text-text-secondary-dark mb-4">
+                            Secure, reliable, and designed for professional environments
+                        </p>
+                        <div class="grid grid-cols-3 gap-4 mt-6">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-light-blue dark:text-calm-blue">100%</div>
+                                <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Secure</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-light-blue dark:text-calm-blue">24/7</div>
+                                <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Support</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-light-blue dark:text-calm-blue">99%</div>
+                                <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Uptime</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call-to-Action Section -->
+<section class="py-20 md:py-28 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 bg-gradient-to-br from-light-blue/5 dark:from-calm-blue/10 via-transparent to-purple-accent/5 dark:to-purple-accent/10"></div>
+    <div class="absolute inset-0 opacity-30">
+        <div class="absolute top-0 left-0 w-72 h-72 bg-light-blue dark:bg-calm-blue rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-pulse"></div>
+        <div class="absolute bottom-0 right-0 w-72 h-72 bg-purple-accent rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-pulse" style="animation-delay: 2s;"></div>
+    </div>
+    
+    <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Testimonial Section -->
+        <div class="text-center mb-12">
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] light-card-shadow max-w-3xl mx-auto">
+                <svg class="h-8 w-8 text-light-blue dark:text-calm-blue mx-auto mb-4" fill="currentColor" viewBox="0 0 32 32">
+                    <path d="M10 8c-3.3 0-6 2.7-6 6v10h10V14H8c0-1.1.9-2 2-2V8zm16 0c-3.3 0-6 2.7-6 6v10h10V14h-6c0-1.1.9-2 2-2V8z"/>
+                </svg>
+                <blockquote class="text-xl md:text-2xl text-text-primary-light dark:text-text-primary-dark mb-4 font-medium italic">
+                    "HelpMe Hub has transformed how we handle IT support at our organization. The AI chat assistance and ticket management system have reduced our response time by 70%."
+                </blockquote>
+                <div class="flex items-center justify-center gap-3">
+                    <div class="h-12 w-12 rounded-full bg-light-blue dark:bg-calm-blue flex items-center justify-center text-white font-semibold">
+                        JD
+                    </div>
+                    <div class="text-left">
+                        <div class="font-semibold text-text-primary-light dark:text-text-primary-dark">John Davis</div>
+                        <div class="text-sm text-text-muted-light dark:text-text-muted-dark">IT Director, Tech Solutions Inc.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Benefits List -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+            <div class="text-center">
+                <div class="mb-3 flex justify-center">
+                    <div class="h-12 w-12 rounded-full bg-light-blue/10 dark:bg-calm-blue/20 flex items-center justify-center">
+                        <svg class="h-6 w-6 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Fast Setup</h3>
+                <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Get started in minutes</p>
+            </div>
+            <div class="text-center">
+                <div class="mb-3 flex justify-center">
+                    <div class="h-12 w-12 rounded-full bg-light-blue/10 dark:bg-calm-blue/20 flex items-center justify-center">
+                        <svg class="h-6 w-6 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Secure</h3>
+                <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Enterprise-grade security</p>
+            </div>
+            <div class="text-center">
+                <div class="mb-3 flex justify-center">
+                    <div class="h-12 w-12 rounded-full bg-light-blue/10 dark:bg-calm-blue/20 flex items-center justify-center">
+                        <svg class="h-6 w-6 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Reliable</h3>
+                <p class="text-sm text-text-muted-light dark:text-text-muted-dark">99.9% uptime guarantee</p>
+            </div>
+            <div class="text-center">
+                <div class="mb-3 flex justify-center">
+                    <div class="h-12 w-12 rounded-full bg-light-blue/10 dark:bg-calm-blue/20 flex items-center justify-center">
+                        <svg class="h-6 w-6 text-light-blue dark:text-calm-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Scalable</h3>
+                <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Grows with your needs</p>
+            </div>
+        </div>
+        
+        <!-- Main CTA -->
+        <div class="text-center">
+            <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">
+                Ready to Get Started?
+            </h2>
+            <p class="text-lg md:text-xl text-text-secondary-light dark:text-text-secondary-dark mb-10 max-w-2xl mx-auto">
+                Join HelpMe Hub today and transform your IT support operations. Get started in minutes, no credit card required.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="{% url 'accounts:register' %}" class="inline-flex items-center justify-center px-10 py-4 text-lg bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-semibold rounded-md transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                    Create Free Account
+                    <svg class="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                </a>
+                <a href="{% url 'accounts:login' %}" class="inline-flex items-center justify-center px-10 py-4 text-lg bg-light-card dark:bg-dark-card hover:bg-light-card-hover dark:hover:bg-dark-card-hover border-2 border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] text-text-primary-light dark:text-text-primary-dark font-semibold rounded-md transition-colors light-card-shadow hover:shadow-lg">
+                    Sign In
+                </a>
+            </div>
+            <p class="mt-6 text-sm text-text-muted-light dark:text-text-muted-dark">
+                Free to get started • No credit card required • Cancel anytime
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

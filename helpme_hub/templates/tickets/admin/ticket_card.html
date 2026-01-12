@@ -1,0 +1,24 @@
+<div class="ticket-card bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow" draggable="true" data-ticket-id="{{ ticket.id }}" data-status="{{ ticket.status }}">
+    <div class="flex items-center justify-between mb-2">
+        <a href="{% url 'tickets:admin_ticket_detail' ticket.id %}" class="font-semibold text-text-primary-light dark:text-text-primary-dark hover:text-light-blue dark:hover:text-calm-blue">
+            #{{ ticket.id }}
+        </a>
+        <span class="px-2 py-1 text-xs font-medium rounded-full {% if ticket.priority == 'urgent' %}bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text{% elif ticket.priority == 'high' %}bg-warning-bg-light dark:bg-warning-bg text-warning-text-light dark:text-warning-text{% elif ticket.priority == 'low' %}bg-text-muted-light dark:text-text-muted-dark text-text-secondary-light dark:text-text-secondary-dark{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% endif %}">
+            {{ ticket.get_priority_display }}
+        </span>
+    </div>
+    <h4 class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark mb-2 line-clamp-2">
+        {{ ticket.title }}
+    </h4>
+    <p class="text-xs text-text-muted-light dark:text-text-muted-dark mb-2 line-clamp-2">
+        {{ ticket.description|truncatewords:15 }}
+    </p>
+    <div class="flex items-center justify-between text-xs text-text-muted-light dark:text-text-muted-dark">
+        <span>{{ ticket.user.email|truncatechars:20 }}</span>
+        {% if ticket.assigned_to %}
+            <span class="text-light-blue dark:text-calm-blue">{{ ticket.assigned_to.email|truncatechars:15 }}</span>
+        {% else %}
+            <span class="text-warning-text-light dark:text-warning-text">Unassigned</span>
+        {% endif %}
+    </div>
+</div>

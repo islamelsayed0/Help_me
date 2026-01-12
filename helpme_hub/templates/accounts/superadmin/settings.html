@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}System Settings - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">System Settings</h1>
+        <a href="{% url 'accounts:superadmin_dashboard' %}" class="text-sm text-light-blue dark:text-calm-blue hover:underline">← Back to Dashboard</a>
+    </div>
+
+    <div class="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 mb-6">
+        <p class="text-sm text-yellow-600 dark:text-yellow-400">
+            <strong>Note:</strong> Most system settings are configured via environment variables. Changes to these settings require updating the environment variables and restarting the application.
+        </p>
+    </div>
+
+    <!-- Application Settings -->
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">
+        <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Application Settings</h2>
+        <div class="space-y-4">
+            <div>
+                <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Debug Mode:</span>
+                <span class="ml-2">
+                    {% if settings.debug %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-500/20 text-red-500">Enabled</span>
+                        <span class="text-xs text-text-muted-light dark:text-text-muted-dark ml-2">(Should be disabled in production)</span>
+                    {% else %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-500">Disabled</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div>
+                <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Allowed Hosts:</span>
+                <span class="ml-2 text-text-primary-light dark:text-text-primary-dark font-mono text-sm">{{ settings.allowed_hosts }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Settings -->
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">
+        <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Email Configuration</h2>
+        <div class="space-y-4">
+            <div>
+                <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Email Backend:</span>
+                <span class="ml-2 text-text-primary-light dark:text-text-primary-dark font-mono text-sm">{{ settings.email_backend }}</span>
+            </div>
+            <p class="text-xs text-text-muted-light dark:text-text-muted-dark">
+                Configure email settings via EMAIL_BACKEND, EMAIL_HOST, EMAIL_PORT, EMAIL_USE_TLS environment variables.
+            </p>
+        </div>
+    </div>
+
+    <!-- Authentication Settings -->
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">
+        <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Authentication</h2>
+        <div class="space-y-4">
+            <div>
+                <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Google OAuth:</span>
+                <span class="ml-2">
+                    {% if settings.google_oauth_enabled %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-500">Enabled</span>
+                    {% else %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-500/20 text-gray-500">Disabled</span>
+                        <span class="text-xs text-text-muted-light dark:text-text-muted-dark ml-2">(Set GOOGLE_OAUTH2_CLIENT_ID and GOOGLE_OAUTH2_CLIENT_SECRET)</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Settings -->
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">
+        <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">AI Configuration</h2>
+        <div class="space-y-4">
+            <div>
+                <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Google Gemini AI:</span>
+                <span class="ml-2">
+                    {% if settings.gemini_ai_enabled %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-500">Enabled</span>
+                    {% else %}
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-500/20 text-gray-500">Disabled</span>
+                        <span class="text-xs text-text-muted-light dark:text-text-muted-dark ml-2">(Set GOOGLE_GEMINI_API_KEY)</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% if settings.gemini_ai_enabled %}
+                <div>
+                    <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Model:</span>
+                    <span class="ml-2 text-text-primary-light dark:text-text-primary-dark font-mono text-sm">{{ settings.gemini_model }}</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Environment Variables Reference -->
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Environment Variables Reference</h2>
+        <div class="space-y-2 text-sm">
+            <div class="font-mono bg-light-card-hover dark:bg-dark-card-hover p-2 rounded">
+                <div class="text-text-secondary-light dark:text-text-secondary-dark">SECRET_KEY</div>
+                <div class="text-text-muted-light dark:text-text-muted-dark text-xs">Django secret key</div>
+            </div>
+            <div class="font-mono bg-light-card-hover dark:bg-dark-card-hover p-2 rounded">
+                <div class="text-text-secondary-light dark:text-text-secondary-dark">DEBUG</div>
+                <div class="text-text-muted-light dark:text-text-muted-dark text-xs">True/False - Enable debug mode</div>
+            </div>
+            <div class="font-mono bg-light-card-hover dark:bg-dark-card-hover p-2 rounded">
+                <div class="text-text-secondary-light dark:text-text-secondary-dark">ALLOWED_HOSTS</div>
+                <div class="text-text-muted-light dark:text-text-muted-dark text-xs">Comma-separated list of allowed hosts</div>
+            </div>
+            <div class="font-mono bg-light-card-hover dark:bg-dark-card-hover p-2 rounded">
+                <div class="text-text-secondary-light dark:text-text-secondary-dark">DATABASE_URL</div>
+                <div class="text-text-muted-light dark:text-text-muted-dark text-xs">PostgreSQL connection string</div>
+            </div>
+            <div class="font-mono bg-light-card-hover dark:bg-dark-card-hover p-2 rounded">
+                <div class="text-text-secondary-light dark:text-text-secondary-dark">GOOGLE_OAUTH2_CLIENT_ID</div>
+                <div class="text-text-muted-light dark:text-text-muted-dark text-xs">Google OAuth client ID</div>
+            </div>
+            <div class="font-mono bg-light-card-hover dark:bg-dark-card-hover p-2 rounded">
+                <div class="text-text-secondary-light dark:text-text-secondary-dark">GOOGLE_OAUTH2_CLIENT_SECRET</div>
+                <div class="text-text-muted-light dark:text-text-muted-dark text-xs">Google OAuth client secret</div>
+            </div>
+            <div class="font-mono bg-light-card-hover dark:bg-dark-card-hover p-2 rounded">
+                <div class="text-text-secondary-light dark:text-text-secondary-dark">GOOGLE_GEMINI_API_KEY</div>
+                <div class="text-text-muted-light dark:text-text-muted-dark text-xs">Google Gemini API key for AI features</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

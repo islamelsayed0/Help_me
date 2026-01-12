@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ school_group.name }} - Members - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto mt-8">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ school_group.name }} - Members</h1>
+            <p class="text-text-secondary-light dark:text-text-secondary-dark mt-1">Manage organization members</p>
+        </div>
+        <a href="{% url 'accounts:superadmin_schoolgroup_detail' school_group.id %}" class="text-sm text-light-blue dark:text-calm-blue hover:underline">← Back to Details</a>
+    </div>
+
+    <!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Accepted</h3>
+            <p class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ accepted_count }}</p>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Pending</h3>
+            <p class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ pending_count }}</p>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Total</h3>
+            <p class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ memberships|length }}</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Search</label>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search by email or name..." class="w-full px-4 py-2 rounded-md bg-input-bg-light dark:bg-deep-dark border border-[rgba(15,23,42,0.14)] dark:border-[rgba(148,163,184,0.25)] text-text-primary-light dark:text-text-primary-dark">
+            </div>
+            <div class="min-w-[150px]">
+                <label class="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Status</label>
+                <select name="status" class="w-full px-4 py-2 rounded-md bg-input-bg-light dark:bg-deep-dark border border-[rgba(15,23,42,0.14)] dark:border-[rgba(148,163,184,0.25)] text-text-primary-light dark:text-text-primary-dark">
+                    <option value="">All</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                    <option value="denied" {% if status_filter == 'denied' %}selected{% endif %}>Denied</option>
+                </select>
+            </div>
+            <button type="submit" class="px-6 py-2 bg-light-blue dark:bg-calm-blue text-white rounded-md hover:opacity-90 transition-opacity">Filter</button>
+            <a href="{% url 'accounts:superadmin_schoolgroup_members' school_group.id %}" class="px-6 py-2 bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark rounded-md hover:opacity-90 transition-opacity border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">Clear</a>
+        </form>
+    </div>
+
+    <!-- Members List -->
+    {% if memberships %}
+        <div class="bg-light-card dark:bg-dark-card rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-light-card-hover dark:bg-dark-card-hover">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">Role</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">Joined</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider">Created</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[rgba(15,23,42,0.10)] dark:divide-[rgba(148,163,184,0.15)]">
+                        {% for membership in memberships %}
+                            <tr class="hover:bg-light-card-hover dark:hover:bg-dark-card-hover transition-colors">
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <div class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark">
+                                            {{ membership.user.get_full_name|default:membership.user.email }}
+                                        </div>
+                                        <div class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                            {{ membership.user.email }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark">
+                                        {{ membership.user.get_role_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if membership.status == 'accepted' %}
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-500">Accepted</span>
+                                    {% elif membership.status == 'pending' %}
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-500/20 text-yellow-500">Pending</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-500/20 text-red-500">Denied</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                    {% if membership.joined_at %}
+                                        {{ membership.joined_at|date:"M d, Y" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                    {{ membership.created_at|date:"M d, Y" }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] text-center">
+            <p class="text-text-secondary-light dark:text-text-secondary-dark">No members found.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Request Approved</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2563EB;
+            margin-bottom: 10px;
+        }
+        h1 {
+            color: #1a1a1a;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            color: #4a4a4a;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #16A34A;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        .button:hover {
+            background-color: #15803D;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .success-box {
+            background-color: #f0fdf4;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #16A34A;
+            margin: 20px 0;
+        }
+        .organization-info {
+            background-color: #eff6ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">HelpMe Hub</div>
+            <h1>🎉 Request Approved!</h1>
+        </div>
+        
+        <div class="content">
+            <p>Great news, {{ user.email }}!</p>
+            
+            <div class="success-box">
+                <strong>✅ Your request to join <strong>{{ school_group.name }}</strong> has been approved!</strong>
+            </div>
+            
+            <p>You can now access all the support features available to members of {{ school_group.name }}:</p>
+            
+            <ul>
+                <li>Start chats with the support team</li>
+                <li>Create and track support tickets</li>
+                <li>Access the knowledge base</li>
+                <li>View your organization's resources</li>
+            </ul>
+            
+            <div class="organization-info">
+                <strong>📋 Organization Details:</strong><br>
+                <strong>Name:</strong> {{ school_group.name }}<br>
+                {% if school_group.description %}
+                <strong>Description:</strong> {{ school_group.description }}
+                {% endif %}
+            </div>
+            
+            <p style="text-align: center;">
+                <a href="{{ site_url }}{% url 'dashboard' %}" class="button">Go to Dashboard</a>
+            </p>
+            
+            <p>Welcome to {{ school_group.name }}! We're here to help whenever you need support.</p>
+            
+            <p>Best regards,<br>
+            <strong>The HelpMe Hub Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated email from {{ site_name }}.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading - HelpMe Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind for dark mode with custom colors
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        /* Light Mode */
+                        'light-bg': '#F8FAFC',
+                        'text-primary-light': '#0F172A',
+                        'text-secondary-light': '#334155',
+                        'text-muted-light': '#64748B',
+                        'light-blue': '#2563EB',
+                        'purple-accent': '#6366F1',
+                        
+                        /* Dark Mode */
+                        'deep-dark': '#020617',
+                        'text-primary-dark': '#E5E7EB',
+                        'text-secondary-dark': '#94A3B8',
+                        'text-muted-dark': '#64748B',
+                        'calm-blue': '#3B82F6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-light-bg dark:bg-deep-dark text-text-primary-light dark:text-text-primary-dark min-h-screen flex items-center justify-center">
+    <div class="text-center">
+        <!-- Logo -->
+        <div class="mb-8 animate-fade-in">
+            <h1 class="text-4xl font-bold text-purple-accent">HelpMe Hub</h1>
+        </div>
+        
+        <!-- Loading Spinner -->
+        <div class="mb-4">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-light-blue dark:border-calm-blue"></div>
+        </div>
+        
+        <!-- Loading Text -->
+        <p class="text-text-secondary-light dark:text-text-secondary-dark text-lg">Loading HelpMe Hub...</p>
+    </div>
+    
+    <script>
+        // Redirect to dashboard or login after a short delay
+        setTimeout(function() {
+            window.location.href = '/accounts/login/';
+        }, 1500);
+    </script>
+    
+    <style>
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-in;
+        }
+    </style>
+</body>
+</html>
+

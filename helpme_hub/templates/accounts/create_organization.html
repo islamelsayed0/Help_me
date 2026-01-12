@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Organization - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-8">
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-2">Create Organization</h1>
+            <p class="text-text-secondary-light dark:text-text-secondary-dark">Create your own organization and become its administrator</p>
+        </div>
+
+        <form method="post" action="{% url 'accounts:create_organization' %}">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="mb-4 p-4 bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text rounded-md transition-colors">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <div class="mb-6">
+                <label for="{{ form.name.id_for_label }}" class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-2">
+                    Organization Name <span class="text-error-text-light dark:text-error-text">*</span>
+                </label>
+                {{ form.name }}
+                {% if form.name.help_text %}
+                    <p class="mt-2 text-xs text-text-muted-light dark:text-text-muted-dark">{{ form.name.help_text }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="mb-6">
+                <label for="{{ form.description.id_for_label }}" class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-2">
+                    Description (Optional)
+                </label>
+                {{ form.description }}
+                {% if form.description.help_text %}
+                    <p class="mt-2 text-xs text-text-muted-light dark:text-text-muted-dark">{{ form.description.help_text }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4 mb-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                    <strong class="text-text-primary-light dark:text-text-primary-dark">Note:</strong> Each user can only create one organization. 
+                    Once created, you will become the administrator of this organization.
+                </p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button type="submit" class="flex-1 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium py-2 px-6 rounded-md transition-colors">
+                    Create Organization
+                </button>
+                <a href="{% url 'accounts:pending' %}" class="flex-1 text-center bg-light-card-hover dark:bg-dark-card-hover hover:bg-light-card-hover dark:hover:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark font-medium py-2 px-6 rounded-md border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+

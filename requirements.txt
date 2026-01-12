@@ -1,0 +1,23 @@
+# Django Core
+Django>=4.2,<5.0
+
+# Database
+psycopg2-binary>=2.9.0
+dj-database-url>=2.1.0
+
+# Authentication
+django-allauth>=0.57.0
+
+# Environment Variables
+python-decouple>=3.8
+
+# Production Server
+gunicorn>=21.2.0
+
+# Static Files
+whitenoise>=6.6.0
+
+# Security (recommended)
+django-cors-headers>=4.3.0
+
+

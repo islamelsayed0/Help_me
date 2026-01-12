@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Role - {{ target_user.email }} - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-8">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">Assign Role</h1>
+        <a href="{% url 'accounts:superadmin_roles' %}" class="text-sm text-light-blue dark:text-calm-blue hover:underline">← Back to Roles</a>
+    </div>
+
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow mb-6">
+        <h2 class="text-xl font-semibold text-text-primary-light dark:text-text-primary-dark mb-4">User Information</h2>
+        <div class="space-y-2">
+            <div>
+                <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Email:</span>
+                <span class="ml-2 text-text-primary-light dark:text-text-primary-dark">{{ target_user.email }}</span>
+            </div>
+            <div>
+                <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Name:</span>
+                <span class="ml-2 text-text-primary-light dark:text-text-primary-dark">{{ target_user.get_full_name|default:"Not set" }}</span>
+            </div>
+            <div>
+                <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Current Role:</span>
+                <span class="ml-2">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full {% if target_user.role == 'superadmin' %}bg-purple-500/20 text-purple-500{% elif target_user.role == 'admin' %}bg-blue-500/20 text-blue-500{% else %}bg-gray-500/20 text-gray-500{% endif %}">
+                        {{ target_user.get_role_display }}
+                    </span>
+                </span>
+            </div>
+            <div>
+                <span class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Joined:</span>
+                <span class="ml-2 text-text-primary-light dark:text-text-primary-dark">{{ target_user.date_joined|date:"M d, Y" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-6">
+                <label for="role" class="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-2">Select New Role *</label>
+                <select id="role" name="role" required class="w-full px-4 py-2 rounded-md bg-input-bg-light dark:bg-deep-dark border border-[rgba(15,23,42,0.14)] dark:border-[rgba(148,163,184,0.25)] text-text-primary-light dark:text-text-primary-dark focus:outline-none focus:ring-2 focus:ring-light-blue-focus dark:focus:ring-calm-blue-focus">
+                    {% for value, label in role_choices %}
+                        <option value="{{ value }}" {% if target_user.role == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if target_user.role == 'superadmin' %}
+                <div class="mb-6 p-4 bg-yellow-500/20 border border-yellow-500/50 rounded-md">
+                    <p class="text-sm text-yellow-600 dark:text-yellow-400">
+                        <strong>Warning:</strong> This user is currently a superadmin. Changing their role may affect system access. Ensure at least one other superadmin exists before making this change.
+                    </p>
+                </div>
+            {% endif %}
+
+            <div class="flex justify-end gap-3">
+                <a href="{% url 'accounts:superadmin_roles' %}" class="px-6 py-2 bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark rounded-md hover:opacity-90 transition-opacity border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">Cancel</a>
+                <button type="submit" class="px-6 py-2 bg-light-blue dark:bg-calm-blue text-white rounded-md hover:opacity-90 transition-opacity">Update Role</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

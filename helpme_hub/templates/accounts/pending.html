@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Approval - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8">
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-2">
+                {% if has_accepted_membership %}Join Another Organization{% else %}Membership Required{% endif %}
+            </h1>
+            <p class="text-text-secondary-light dark:text-text-secondary-dark">
+                {% if has_accepted_membership %}
+                    Request membership in an additional organization using an access code.
+                {% else %}
+                    You need to be a member of an organization to access HelpMe Hub features.
+                {% endif %}
+            </p>
+        </div>
+        
+        <!-- Create Organization Option -->
+        {% if can_create_organization %}
+            <div class="mb-8 p-6 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <div class="text-center">
+                    <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-2">Create Your Organization</h2>
+                    <p class="text-text-secondary-light dark:text-text-secondary-dark mb-4">
+                        Create your own organization and become its administrator. Each user can create one organization.
+                    </p>
+                    <a href="{% url 'accounts:create_organization' %}" class="inline-block bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium py-2 px-6 rounded-md transition-colors">
+                        Create Organization
+                    </a>
+                </div>
+            </div>
+            
+            {% if form %}
+                <div class="text-center mb-6">
+                    <p class="text-text-muted-light dark:text-text-muted-dark text-sm">────── or ──────</p>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {% if pending_requests %}
+            <!-- Pending Requests Status -->
+            <div class="mb-8">
+                <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Pending Join Requests</h2>
+                <div class="space-y-4">
+                    {% for request in pending_requests %}
+                        <div class="p-6 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-6 w-6 text-warning-text-light dark:text-warning-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-4 flex-1">
+                                    <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">Request Pending</h3>
+                                    <p class="text-text-secondary-light dark:text-text-secondary-dark mb-2">
+                                        Your request to join <strong>{{ request.school_group.name }}</strong> is pending approval.
+                                    </p>
+                                    <p class="text-sm text-text-muted-light dark:text-text-muted-dark">
+                                        Requested on {{ request.created_at|date:"F d, Y g:i A" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% elif pending_request %}
+            <!-- Single Pending Request (backward compatibility) -->
+            <div class="mb-8 p-6 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-warning-text-light dark:text-warning-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">Request Pending</h3>
+                        <p class="text-text-secondary-light dark:text-text-secondary-dark mb-2">
+                            Your request to join <strong>{{ pending_request.school_group.name }}</strong> is pending approval.
+                        </p>
+                        <p class="text-sm text-text-muted-light dark:text-text-muted-dark">
+                            Requested on {{ pending_request.created_at|date:"F d, Y g:i A" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% elif memberships %}
+            <!-- Existing Memberships Status -->
+            <div class="mb-8">
+                <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Your Membership Requests</h2>
+                {% for membership in memberships %}
+                    <div class="mb-4 p-4 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-text-primary-light dark:text-text-primary-dark">{{ membership.school_group.name }}</h3>
+                                <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                    Status: 
+                                    <span class="font-medium">
+                                        {% if membership.status == 'pending' %}
+                                            <span class="text-warning-text-light dark:text-warning-text">Pending</span>
+                                        {% elif membership.status == 'accepted' %}
+                                            <span class="text-success-text-light dark:text-success-text">Accepted</span>
+                                        {% elif membership.status == 'denied' %}
+                                            <span class="text-error-text-light dark:text-error-text">Denied</span>
+                                        {% endif %}
+                                    </span>
+                                </p>
+                            </div>
+                            {% if membership.status == 'denied' %}
+                                <a href="{% url 'accounts:request_join' %}" class="text-sm text-light-blue dark:text-calm-blue hover:text-light-blue-hover dark:hover:text-calm-blue-hover">
+                                    Request Again
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if form %}
+            <!-- Request to Join Form -->
+            <div class="{% if can_create_organization %}border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] pt-8{% endif %}">
+                <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Join an Organization</h2>
+                
+                <form method="post" action="{% url 'accounts:request_join' %}?next={% url 'accounts:pending' %}">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="mb-4 p-4 bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text rounded-md transition-colors">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            {% endfor %}
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-6">
+                        <label for="{{ form.access_code.id_for_label }}" class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-2">
+                            Access Code
+                        </label>
+                        {{ form.access_code }}
+                        {% if form.access_code.help_text %}
+                            <p class="mt-2 text-xs text-text-muted-light dark:text-text-muted-dark">{{ form.access_code.help_text }}</p>
+                        {% endif %}
+                        <p class="mt-2 text-xs text-text-muted-light dark:text-text-muted-dark">
+                            Enter the access code provided by the organization administrator. 
+                            Format: <code class="text-xs">XXXX-XXXX-XXXX</code> (dashes are optional). 
+                            The code is case-insensitive.
+                        </p>
+                    </div>
+                    
+                    <button type="submit" class="w-full md:w-auto bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium py-2 px-6 rounded-md transition-colors">
+                        Submit Request
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+
+        {% if not pending_request and not form and not can_create_organization %}
+            <!-- No available groups -->
+            <div class="text-center p-8">
+                <p class="text-text-secondary-light dark:text-text-secondary-dark">
+                    No organizations are currently available. Please contact your administrator or create your own organization.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

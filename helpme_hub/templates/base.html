@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HelpMe Hub{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind for dark mode (class-based) with custom colors
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        /* Light Mode Backgrounds */
+                        'light-bg': '#F8FAFC', /* Soft slate white main background */
+                        'light-sidebar': '#F8FAFC', /* Sidebar background */
+                        'light-sidebar-alt': '#F1F5F9', /* Sidebar alternate */
+                        
+                        /* Light Mode Cards */
+                        'light-card': '#FFFFFF', /* Pure white card background */
+                        'light-card-hover': '#F1F5F9', /* Card hover/active */
+                        'input-bg-light': '#FFFFFF', /* Input background */
+                        
+                        /* Light Mode Text Hierarchy */
+                        'text-primary-light': '#0F172A', /* Primary text */
+                        'text-secondary-light': '#334155', /* Secondary text */
+                        'text-muted-light': '#64748B', /* Muted text */
+                        
+                        /* Primary Actions - Calm Blue (Light Mode) */
+                        'light-blue': '#2563EB', /* Primary actions */
+                        'light-blue-hover': '#1D4ED8', /* Primary hover */
+                        'light-blue-active': '#1E40AF', /* Primary active */
+                        'light-blue-focus': '#93C5FD', /* Focus ring */
+                        
+                        /* Purple Accents - Decorative Only */
+                        'purple-accent': '#6366F1', /* Accent purple */
+                        'purple-accent-light': '#EEF2FF', /* Purple light background */
+                        
+                        /* Status Colors (Light Mode) */
+                        'success-text-light': '#16A34A',
+                        'success-bg-light': '#ECFDF5',
+                        'warning-text-light': '#D97706',
+                        'warning-bg-light': '#FFFBEB',
+                        'error-text-light': '#DC2626',
+                        'error-bg-light': '#FEF2F2',
+                        
+                        /* Dark Mode Backgrounds */
+                        'deep-dark': '#020617', /* Near black main background */
+                        'sidebar-dark': '#020617', /* Sidebar background */
+                        'sidebar-alt': '#030712', /* Sidebar alternate */
+                        
+                        /* Dark Mode Cards - Blue Tinted */
+                        'dark-card': '#0B1220', /* Blue tinted card background */
+                        'dark-card-hover': '#0F172A', /* Card hover/active */
+                        
+                        /* Dark Mode Text Hierarchy */
+                        'text-primary-dark': '#E5E7EB', /* Primary text */
+                        'text-secondary-dark': '#94A3B8', /* Secondary text */
+                        'text-muted-dark': '#64748B', /* Muted text */
+                        
+                        /* Primary Actions - Calm Blue */
+                        'calm-blue': '#3B82F6', /* Primary actions */
+                        'calm-blue-hover': '#2563EB', /* Primary hover */
+                        'calm-blue-active': '#1D4ED8', /* Primary active */
+                        'calm-blue-focus': '#60A5FA', /* Focus ring */
+                        
+                        /* Purple Accents - Decorative Only */
+                        'purple-accent': '#6366F1', /* Accent purple */
+                        'purple-accent-dark': '#312E81', /* Accent purple dark */
+                        
+                        /* Status Colors */
+                        'success-text': '#22C55E',
+                        'success-bg': '#052E16',
+                        'warning-text': '#F59E0B',
+                        'warning-bg': '#451A03',
+                        'error-text': '#EF4444',
+                        'error-bg': '#450A0A',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-light-bg dark:bg-deep-dark text-text-primary-light dark:text-text-primary-dark min-h-screen transition-colors">
+    <!-- Navigation Bar -->
+    <nav class="bg-light-card dark:bg-dark-card border-b border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] sticky top-0 z-50 transition-colors light-card-shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo and Mobile Menu Button -->
+                <div class="flex items-center">
+                    <button id="mobileMenuButton" class="lg:hidden text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark mr-3 p-2">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'accounts:home' %}{% endif %}" class="text-xl font-bold text-purple-accent">
+                        HelpMe Hub
+                    </a>
+                </div>
+                
+                <!-- Right Side: Navigation Links, Separator, Controls -->
+                <div class="flex items-center space-x-4">
+                    <!-- Desktop Navigation Links - Primary Only -->
+                    <div class="hidden lg:flex items-center space-x-1">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'accounts:dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if '/accounts/dashboard' in request.path or '/accounts/admin/dashboard' in request.path or '/accounts/superadmin/dashboard' in request.path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Dashboard</a>
+                            <a href="{% url 'chats:chat_list' %}" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if '/chats' in request.path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Chats</a>
+                            <a href="{% url 'knowledge:article_list' %}" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if '/knowledge' in request.path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Knowledge Base</a>
+                        {% else %}
+                            <a href="{% url 'accounts:home' %}#features" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if request.path == '/' and '#features' in request.get_full_path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Features</a>
+                            <a href="{% url 'accounts:home' %}#about" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if request.path == '/' and '#about' in request.get_full_path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">About</a>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Visual Separator (desktop only, shown when navigation links are present) -->
+                    <div class="hidden lg:block h-6 w-px bg-[rgba(15,23,42,0.10)] dark:bg-[rgba(148,163,184,0.15)]"></div>
+                    
+                    {% if user.is_authenticated %}
+                        {% load accounts_tags %}
+                        {% get_user_organizations_tag user as user_orgs %}
+                        {% if user_orgs|length > 1 %}
+                            <!-- Organization Switcher -->
+                            <div class="relative hidden lg:block">
+                                <form method="post" action="{% url 'accounts:switch_organization' %}" id="orgSwitcherForm">
+                                    {% csrf_token %}
+                                    <select name="organization_id" id="orgSwitcher" onchange="document.getElementById('orgSwitcherForm').submit();" class="text-sm bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-light-blue-focus dark:focus:ring-calm-blue-focus transition-colors">
+                                        {% for org in user_orgs %}
+                                            <option value="{{ org.id }}" {% if user.current_organization and user.current_organization.id == org.id %}selected{% endif %}>{{ org.name|truncatechars:20 }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </div>
+                        {% elif user.current_organization %}
+                            <!-- Current Organization (single org) -->
+                            <div class="hidden lg:block text-sm text-text-secondary-light dark:text-text-secondary-dark px-3 py-1.5">
+                                {{ user.current_organization.name|truncatechars:20 }}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Dark Mode Toggle -->
+                    <button id="darkModeToggle" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark p-2 rounded-md transition-colors">
+                        <svg id="sunIcon" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg id="moonIcon" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                    
+                    {% if user.is_authenticated %}
+                        <!-- User Profile Dropdown -->
+                        <div class="relative">
+                            <button id="profileDropdownButton" class="flex items-center text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark">
+                                <span class="mr-2">{{ user.email|truncatechars:20 }}</span>
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-light-card dark:bg-dark-card rounded-md shadow-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                                <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 text-sm text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover transition-colors">Profile</a>
+                                <a href="{% url 'accounts:logout' %}" class="block px-4 py-2 text-sm text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover transition-colors">Logout</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="text-light-blue dark:text-calm-blue hover:text-light-blue-hover dark:hover:text-calm-blue-hover px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Mobile Sidebar -->
+    <div id="mobileSidebar" class="hidden lg:hidden fixed inset-0 z-50 transition-opacity duration-300" style="backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+        <div id="mobileSidebarContent" class="fixed inset-y-0 left-0 w-64 bg-light-bg dark:bg-deep-dark border-r border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transform -translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
+            <div class="flex items-center justify-between h-16 px-4 border-b border-[rgba(15,23,42,0.06)] dark:border-[rgba(148,163,184,0.15)] sticky top-0 bg-light-bg dark:bg-deep-dark z-10">
+                <span class="text-xl font-bold text-purple-accent">Menu</span>
+                <button id="closeMobileMenu" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark p-2">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+                    <nav class="mt-4 px-2 space-y-1 overflow-y-auto" style="max-height: calc(100vh - 4rem);">
+                        {% if user.is_authenticated %}
+                            <!-- Main Section -->
+                            <div class="mb-4">
+                                <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Main</p>
+                                <a href="{% url 'accounts:dashboard' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/dashboard' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📊 Dashboard</a>
+                                <a href="{% url 'accounts:profile' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/profile' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">👤 Profile</a>
+                            </div>
+                            
+                            <!-- Support Section -->
+                            <div class="mb-4">
+                                <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Support</p>
+                                <a href="{% url 'chats:chat_list' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/chats' in request.path and '/chats/admin' not in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">💬 Chats</a>
+                                <a href="{% url 'knowledge:article_list' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/knowledge' in request.path and '/knowledge/admin' not in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📚 Knowledge Base</a>
+                            </div>
+                            
+                            <!-- Organization Section -->
+                            <div class="mb-4">
+                                <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Organization</p>
+                                <a href="{% url 'accounts:join_organization' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/join-organization' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">➕ Join Organization</a>
+                                <a href="{% url 'accounts:subscription' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/organization/subscription' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">💳 Subscription</a>
+                            </div>
+                            
+                            <!-- Admin Section -->
+                            {% if user.is_admin %}
+                                <div class="mb-4">
+                                    <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Admin</p>
+                                    <a href="{% url 'accounts:admin_dashboard' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/admin/dashboard' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">⚙️ Admin Dashboard</a>
+                                    <a href="{% url 'chats:admin_inbox' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/chats/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📥 Chat Inbox</a>
+                                    <a href="{% url 'tickets:admin_board' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/tickets/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📋 Ticket Board</a>
+                                    <a href="{% url 'knowledge:admin_article_list' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/knowledge/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📝 Manage Articles</a>
+                                    {% load schoolgroups_tags %}
+                                    {% get_pending_join_requests_count user as pending_count %}
+                                    <a href="{% url 'accounts:admin_join_requests' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors flex items-center justify-between {% if '/accounts/admin/joinrequests' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">
+                                        <span>📨 Join Requests</span>
+                                        {% if pending_count > 0 %}
+                                            <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-warning-text-light dark:bg-warning-text text-white">{{ pending_count }}</span>
+                                        {% endif %}
+                                    </a>
+                                    <a href="{% url 'accounts:admin_access_code' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/admin/access-code' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">🔑 Access Code</a>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Superadmin Section -->
+                            {% if user.is_superadmin %}
+                                <div class="mb-4">
+                                    <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Superadmin</p>
+                                    <a href="{% url 'accounts:superadmin_dashboard' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/superadmin/dashboard' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">🔧 Superadmin</a>
+                                    <a href="{% url 'audit:audit_log_list' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/superadmin/auditlogs' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📊 Audit Logs</a>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Logout -->
+                            <div class="mt-6 pt-4 border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                                <a href="{% url 'accounts:logout' %}" class="block px-4 py-3 text-base font-medium text-error-text-light dark:text-error-text hover:bg-error-bg-light dark:hover:bg-error-bg rounded-md transition-colors">🚪 Logout</a>
+                            </div>
+                        {% else %}
+                            <a href="{% url 'accounts:home' %}#features" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors">Features</a>
+                            <a href="{% url 'accounts:home' %}#about" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors">About</a>
+                            <a href="{% url 'accounts:login' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors">Login</a>
+                            <a href="{% url 'accounts:register' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors">Register</a>
+                        {% endif %}
+                    </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex">
+        <!-- Desktop Sidebar (only shown when authenticated) -->
+        {% if user.is_authenticated %}
+        <aside class="hidden lg:block w-64 bg-light-sidebar dark:bg-sidebar-dark border-r border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] min-h-screen transition-colors sticky top-16">
+            <nav class="mt-4 px-2 space-y-1">
+                <!-- Main Section -->
+                <div class="mb-4">
+                    <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Main</p>
+                    <a href="{% url 'accounts:dashboard' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/dashboard' in request.path or '/accounts/admin/dashboard' in request.path or '/accounts/superadmin/dashboard' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📊 Dashboard</a>
+                    <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/profile' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">👤 Profile</a>
+                </div>
+                
+                <!-- Support Section -->
+                <div class="mb-4">
+                    <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Support</p>
+                    <a href="{% url 'chats:chat_list' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/chats' in request.path and '/chats/admin' not in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">💬 Chats</a>
+                    <a href="{% url 'knowledge:article_list' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/knowledge' in request.path and '/knowledge/admin' not in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📚 Knowledge Base</a>
+                </div>
+                
+                <!-- Organization Section -->
+                <div class="mb-4">
+                    <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Organization</p>
+                    <a href="{% url 'accounts:join_organization' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/join-organization' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">➕ Join Organization</a>
+                    <a href="{% url 'accounts:subscription' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/organization/subscription' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">💳 Subscription</a>
+                </div>
+                
+                <!-- Admin Section -->
+                {% if user.is_admin %}
+                    <div class="mb-4">
+                        <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Admin</p>
+                        <a href="{% url 'accounts:admin_dashboard' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/admin/dashboard' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">⚙️ Admin Dashboard</a>
+                        <a href="{% url 'chats:admin_inbox' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/chats/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📥 Chat Inbox</a>
+                        <a href="{% url 'tickets:admin_board' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/tickets/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📋 Ticket Board</a>
+                        <a href="{% url 'knowledge:admin_article_list' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/knowledge/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📝 Manage Articles</a>
+                        {% load schoolgroups_tags %}
+                        {% get_pending_join_requests_count user as pending_count %}
+                        <a href="{% url 'accounts:admin_join_requests' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/admin/joinrequests' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">
+                            <span class="flex items-center justify-between">
+                                <span>📨 Join Requests</span>
+                                {% if pending_count > 0 %}
+                                    <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-warning-text-light dark:bg-warning-text text-white">{{ pending_count }}</span>
+                                {% endif %}
+                            </span>
+                        </a>
+                        <a href="{% url 'accounts:admin_access_code' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/admin/access-code' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">🔑 Access Code</a>
+                    </div>
+                {% endif %}
+                
+                <!-- Superadmin Section -->
+                {% if user.is_superadmin %}
+                    <div class="mb-4">
+                        <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Superadmin</p>
+                        <a href="{% url 'accounts:superadmin_dashboard' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/superadmin/dashboard' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">🔧 Superadmin</a>
+                        <a href="{% url 'audit:audit_log_list' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/superadmin/auditlogs' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📊 Audit Logs</a>
+                    </div>
+                {% endif %}
+            </nav>
+        </aside>
+        {% endif %}
+        
+        <!-- Content Area -->
+        <main class="flex-1 {% if not user.is_authenticated %}p-0{% else %}p-4 sm:p-6{% endif %}">
+            <!-- Messages -->
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        {% if message and message.message and message.message|length > 0 %}
+                            <div class="p-4 mb-2 rounded-md transition-colors {% if message.tags == 'error' %}bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text{% elif message.tags == 'success' %}bg-success-bg-light dark:bg-success-bg text-success-text-light dark:text-success-text{% else %}bg-purple-accent-light dark:bg-purple-accent dark:bg-opacity-10 text-purple-accent dark:text-purple-accent{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-light-bg dark:bg-deep-dark border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mt-auto transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <p class="text-center text-text-secondary-light dark:text-text-secondary-dark text-sm">© 2024 HelpMe Hub. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <!-- Floating Help Bubble -->
+    {% if user.is_authenticated %}
+        <div id="helpBubble" class="fixed bottom-6 right-6 z-50">
+            <button id="helpBubbleButton" class="w-14 h-14 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Help Chat Widget -->
+        <div id="helpChatWidget" class="fixed bottom-24 right-6 w-96 h-[500px] bg-light-card dark:bg-dark-card rounded-lg shadow-2xl border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] z-50 hidden flex flex-col transition-all">
+            <!-- Chat Header -->
+            <div class="p-4 border-b border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark">Help Assistant</h3>
+                    <p class="text-xs text-text-muted-light dark:text-text-muted-dark">Ask me anything!</p>
+                </div>
+                <button id="closeHelpChat" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="helpChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
+                <div class="flex justify-start">
+                    <div class="max-w-[80%] px-4 py-2 bg-light-card-hover dark:bg-dark-card-hover rounded-lg text-text-primary-light dark:text-text-primary-dark">
+                        <p class="text-sm">Hello! I'm your AI assistant. How can I help you today?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <form id="helpChatForm" class="flex gap-2">
+                    <input 
+                        type="text" 
+                        id="helpChatInput" 
+                        placeholder="Type your question..." 
+                        class="flex-1 px-4 py-2 rounded-md bg-input-bg-light dark:bg-deep-dark border border-[rgba(15,23,42,0.14)] dark:border-[rgba(148,163,184,0.25)] text-text-primary-light dark:text-text-primary-dark placeholder:text-text-muted-light dark:placeholder:text-text-muted-dark focus:outline-none focus:ring-2 focus:ring-light-blue-focus dark:focus:ring-calm-blue-focus transition-colors"
+                        autocomplete="off"
+                    >
+                    <button 
+                        type="submit" 
+                        class="px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white rounded-md transition-colors"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- JavaScript -->
+    {% load static %}
+    <script src="{% static 'js/darkmode.js' %}"></script>
+    <script src="{% static 'js/navigation.js' %}"></script>
+    {% if user.is_authenticated %}
+        <script src="{% static 'js/help_bubble.js' %}"></script>
+    {% endif %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

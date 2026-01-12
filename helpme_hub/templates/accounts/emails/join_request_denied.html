@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Request Update</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2563EB;
+            margin-bottom: 10px;
+        }
+        h1 {
+            color: #1a1a1a;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            color: #4a4a4a;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2563EB;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        .button:hover {
+            background-color: #1D4ED8;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .info-box {
+            background-color: #fffbeb;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #F59E0B;
+            margin: 20px 0;
+        }
+        .notes-box {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">HelpMe Hub</div>
+            <h1>Request Update</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hello {{ user.email }},</p>
+            
+            <div class="info-box">
+                <strong>📋 Your request to join <strong>{{ school_group.name }}</strong> could not be approved at this time.</strong>
+            </div>
+            
+            <p>We wanted to let you know that your request to join {{ school_group.name }} was reviewed, but unfortunately it could not be approved.</p>
+            
+            {% if notes %}
+            <div class="notes-box">
+                <strong>Note from reviewer:</strong><br>
+                {{ notes }}
+            </div>
+            {% endif %}
+            
+            <p><strong>What you can do:</strong></p>
+            <ul>
+                <li>Verify that you used the correct access code</li>
+                <li>Contact your organization administrator for assistance</li>
+                <li>Request access again with the correct information</li>
+            </ul>
+            
+            <p style="text-align: center;">
+                <a href="{{ site_url }}{% url 'accounts:pending' %}" class="button">View Status</a>
+            </p>
+            
+            <p>If you believe this is an error, please contact your organization's administrator directly.</p>
+            
+            <p>Best regards,<br>
+            <strong>The HelpMe Hub Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated email from {{ site_name }}.</p>
+        </div>
+    </div>
+</body>
+</html>

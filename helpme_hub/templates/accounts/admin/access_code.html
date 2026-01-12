@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Access Code - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">Access Code</h1>
+        <p class="text-text-secondary-light dark:text-text-secondary-dark mt-2">
+            Share this code with users who want to join <strong>{{ organization.name }}</strong>
+        </p>
+    </div>
+
+    <div class="bg-light-card dark:bg-dark-card rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow p-8">
+        {% if access_code %}
+            <!-- Access Code Display -->
+            <div class="mb-8">
+                <label class="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-2">
+                    Access Code
+                </label>
+                <div class="flex items-center space-x-4">
+                    <div class="flex-1 px-6 py-4 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                        <code class="text-2xl font-mono font-bold text-text-primary-light dark:text-text-primary-dark tracking-wider">
+                            {{ access_code }}
+                        </code>
+                    </div>
+                    <button 
+                        onclick="copyToClipboard('{{ access_code }}')" 
+                        class="px-6 py-4 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium rounded-lg transition-colors"
+                        id="copyButton"
+                    >
+                        Copy
+                    </button>
+                </div>
+                <p class="mt-2 text-xs text-text-muted-light dark:text-text-muted-dark">
+                    Click "Copy" to copy the code to your clipboard
+                </p>
+            </div>
+
+            <!-- Code Status -->
+            <div class="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                    <div class="text-xs text-text-muted-light dark:text-text-muted-dark mb-1">Status</div>
+                    <div class="text-sm font-medium">
+                        {% if is_valid %}
+                            <span class="text-success-text-light dark:text-success-text">Active</span>
+                        {% else %}
+                            <span class="text-error-text-light dark:text-error-text">Expired</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="p-4 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                    <div class="text-xs text-text-muted-light dark:text-text-muted-dark mb-1">Generated</div>
+                    <div class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark">
+                        {% if generated_at %}
+                            {{ generated_at|date:"M d, Y" }}<br>
+                            <span class="text-xs text-text-muted-light dark:text-text-muted-dark">{{ generated_at|date:"g:i A" }}</span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="p-4 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                    <div class="text-xs text-text-muted-light dark:text-text-muted-dark mb-1">Expires</div>
+                    <div class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark">
+                        {% if expires_at %}
+                            {{ expires_at|date:"M d, Y" }}<br>
+                            <span class="text-xs {% if days_until_expiry and days_until_expiry <= 7 %}text-error-text-light dark:text-error-text{% elif days_until_expiry and days_until_expiry <= 14 %}text-warning-text-light dark:text-warning-text{% else %}text-text-muted-light dark:text-text-muted-dark{% endif %}">
+                                {% if days_until_expiry %}
+                                    {% if days_until_expiry > 0 %}
+                                        {{ days_until_expiry }} day{{ days_until_expiry|pluralize }} remaining
+                                    {% else %}
+                                        Expired
+                                    {% endif %}
+                                {% else %}
+                                    {{ expires_at|date:"g:i A" }}
+                                {% endif %}
+                            </span>
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Regenerate Button -->
+            <div class="border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] pt-6">
+                <div class="bg-warning-bg-light dark:bg-warning-bg rounded-lg p-4 mb-4">
+                    <div class="flex items-start">
+                        <svg class="h-5 w-5 text-warning-text-light dark:text-warning-text mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-medium text-warning-text-light dark:text-warning-text mb-1">
+                                Regenerating Access Code
+                            </h3>
+                            <p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                                Regenerating the access code will invalidate the current code. Users will need the new code to join your organization.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'accounts:admin_regenerate_access_code' %}" onsubmit="return confirm('Are you sure you want to regenerate the access code? The current code will be invalidated and users will need the new code to join.');">
+                    {% csrf_token %}
+                    <button type="submit" class="px-6 py-3 bg-warning-text-light dark:bg-warning-text hover:bg-warning-text-light dark:hover:bg-warning-text text-white font-medium rounded-lg transition-colors">
+                        Regenerate Access Code
+                    </button>
+                </form>
+            </div>
+        {% else %}
+            <!-- No Access Code -->
+            <div class="text-center py-8">
+                <p class="text-text-secondary-light dark:text-text-secondary-dark mb-4">
+                    No access code has been generated for this organization.
+                </p>
+                <form method="post" action="{% url 'accounts:admin_regenerate_access_code' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="px-6 py-3 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium rounded-lg transition-colors">
+                        Generate Access Code
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Instructions -->
+    <div class="mt-6 bg-light-card dark:bg-dark-card rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow p-6">
+        <h2 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-3">How to Share Access Code</h2>
+        <ol class="list-decimal list-inside space-y-2 text-text-secondary-light dark:text-text-secondary-dark">
+            <li>Copy the access code using the "Copy" button above</li>
+            <li>Share the code with users who want to join your organization</li>
+            <li>Users will enter this code on the "Join Organization" page</li>
+            <li>You can regenerate the code at any time if needed</li>
+        </ol>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        const button = document.getElementById('copyButton');
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.classList.add('bg-success-text-light', 'dark:bg-success-text');
+        button.classList.remove('bg-light-blue', 'dark:bg-calm-blue');
+        
+        setTimeout(function() {
+            button.textContent = originalText;
+            button.classList.remove('bg-success-text-light', 'dark:bg-success-text');
+            button.classList.add('bg-light-blue', 'dark:bg-calm-blue');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy text: ', err);
+        alert('Failed to copy. Please manually copy the code.');
+    });
+}
+</script>
+{% endblock %}
+

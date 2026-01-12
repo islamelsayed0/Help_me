@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Sign Up Via Google - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-12">
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <div class="text-center mb-8">
+            <div class="mb-4">
+                <svg class="mx-auto h-16 w-16 text-purple-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-2">Sign Up Via Google</h1>
+            <p class="text-text-secondary-light dark:text-text-secondary-dark">You are about to create a new account using your Google account.</p>
+        </div>
+        
+        <div class="mb-6 p-4 bg-info-bg-light dark:bg-info-bg rounded-md border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+            <p class="text-text-primary-light dark:text-text-primary-dark text-sm">
+                By signing up with Google, your account will be created automatically using your Google email address and profile information.
+            </p>
+        </div>
+        
+        <form method="post" action="{% url 'socialaccount_signup' %}">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="mb-4 p-4 bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text rounded-md transition-colors">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+            {% endif %}
+            
+            <button type="submit" class="w-full bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium py-3 px-4 rounded-md transition-colors mb-4">
+                Continue
+            </button>
+            
+            <div class="text-center">
+                <a href="{% url 'accounts:register' %}" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark text-sm">
+                    ← Back to Sign Up
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+

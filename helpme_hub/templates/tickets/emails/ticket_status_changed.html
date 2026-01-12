@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Status Update</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2563EB;
+            margin-bottom: 10px;
+        }
+        h1 {
+            color: #1a1a1a;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            color: #4a4a4a;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2563EB;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        .button:hover {
+            background-color: #1D4ED8;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .status-box {
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .status-resolved {
+            background-color: #f0fdf4;
+            border-left: 4px solid #16A34A;
+        }
+        .status-closed {
+            background-color: #f3f4f6;
+            border-left: 4px solid #6b7280;
+        }
+        .ticket-info {
+            background-color: #eff6ff;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .ticket-detail {
+            margin: 10px 0;
+        }
+        .ticket-detail strong {
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">HelpMe Hub</div>
+            <h1>📋 Ticket Status Update</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hello {{ ticket.user.email }},</p>
+            
+            <p>We wanted to let you know that your support ticket has been updated.</p>
+            
+            <div class="status-box status-{{ new_status }}">
+                <strong style="font-size: 18px;">
+                    {% if new_status == 'resolved' %}
+                        ✅ Ticket Resolved!
+                    {% elif new_status == 'closed' %}
+                        🔒 Ticket Closed
+                    {% else %}
+                        Status Changed: {{ new_status|title }}
+                    {% endif %}
+                </strong>
+            </div>
+            
+            <div class="ticket-info">
+                <div class="ticket-detail">
+                    <strong>Ticket #:</strong> {{ ticket.id }}
+                </div>
+                <div class="ticket-detail">
+                    <strong>Title:</strong> {{ ticket.title }}
+                </div>
+                <div class="ticket-detail">
+                    <strong>Previous Status:</strong> {{ old_status|title }}
+                </div>
+                <div class="ticket-detail">
+                    <strong>New Status:</strong> {{ new_status|title }}
+                </div>
+                <div class="ticket-detail">
+                    <strong>Updated by:</strong> {{ user.email }}
+                </div>
+                {% if ticket.resolution_notes %}
+                <div class="ticket-detail">
+                    <strong>Resolution Notes:</strong><br>
+                    {{ ticket.resolution_notes|truncatewords:100 }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <p style="text-align: center;">
+                <a href="{{ site_url }}{% url 'tickets:ticket_detail' ticket.id %}" class="button">View Ticket</a>
+            </p>
+            
+            {% if new_status == 'resolved' %}
+            <p>Great news! Your ticket has been marked as resolved. If you have any follow-up questions or the issue persists, please let us know.</p>
+            {% elif new_status == 'closed' %}
+            <p>Your ticket has been closed. If you need further assistance, please feel free to create a new ticket or start a chat with our support team.</p>
+            {% endif %}
+            
+            <p>Thank you for your patience!</p>
+            
+            <p>Best regards,<br>
+            <strong>The HelpMe Hub Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated email from {{ site_name }}.</p>
+            <p>You received this email because you created this support ticket.</p>
+        </div>
+    </div>
+</body>
+</html>

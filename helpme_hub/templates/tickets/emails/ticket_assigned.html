@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Ticket Assigned</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2563EB;
+            margin-bottom: 10px;
+        }
+        h1 {
+            color: #1a1a1a;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            color: #4a4a4a;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2563EB;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        .button:hover {
+            background-color: #1D4ED8;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .ticket-info {
+            background-color: #eff6ff;
+            padding: 20px;
+            border-radius: 6px;
+            border-left: 4px solid #2563EB;
+            margin: 20px 0;
+        }
+        .ticket-detail {
+            margin: 10px 0;
+        }
+        .ticket-detail strong {
+            color: #1e40af;
+        }
+        .priority-high {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .priority-medium {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+        .priority-low {
+            color: #16a34a;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">HelpMe Hub</div>
+            <h1>🎫 New Ticket Assigned to You</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hello {{ assigned_to.email }},</p>
+            
+            <p>A new support ticket has been assigned to you and requires your attention.</p>
+            
+            <div class="ticket-info">
+                <div class="ticket-detail">
+                    <strong>Ticket #:</strong> {{ ticket.id }}
+                </div>
+                <div class="ticket-detail">
+                    <strong>Title:</strong> {{ ticket.title }}
+                </div>
+                <div class="ticket-detail">
+                    <strong>Status:</strong> {{ ticket.get_status_display }}
+                </div>
+                <div class="ticket-detail">
+                    <strong>Priority:</strong> 
+                    <span class="priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+                </div>
+                <div class="ticket-detail">
+                    <strong>Created by:</strong> {{ ticket.user.email }}
+                </div>
+                <div class="ticket-detail">
+                    <strong>Created:</strong> {{ ticket.created_at|date:"F d, Y g:i A" }}
+                </div>
+                {% if ticket.description %}
+                <div class="ticket-detail">
+                    <strong>Description:</strong><br>
+                    {{ ticket.description|truncatewords:50 }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <p style="text-align: center;">
+                <a href="{{ site_url }}{% url 'tickets:admin_ticket_detail' ticket.id %}" class="button">View Ticket</a>
+            </p>
+            
+            <p>Please review the ticket and take appropriate action. You can respond directly through the ticket detail page.</p>
+            
+            <p>Thank you for your attention to this matter.</p>
+            
+            <p>Best regards,<br>
+            <strong>The HelpMe Hub Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated email from {{ site_name }}.</p>
+            <p>You received this email because a ticket was assigned to you.</p>
+        </div>
+    </div>
+</body>
+</html>

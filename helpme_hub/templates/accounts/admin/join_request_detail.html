@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Join Request Detail - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8">
+    <div class="mb-6">
+        <a href="{% url 'accounts:admin_join_requests' %}" class="text-light-blue dark:text-calm-blue hover:text-light-blue-hover dark:hover:text-calm-blue-hover flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Join Requests
+        </a>
+    </div>
+
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-2">Join Request Details</h1>
+            <div class="mt-2">
+                {% if join_request.status == 'pending' %}
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-warning-text-light dark:bg-warning-text text-white">
+                        Pending
+                    </span>
+                {% elif join_request.status == 'accepted' %}
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-success-text-light dark:text-success-text text-white">
+                        Accepted
+                    </span>
+                {% elif join_request.status == 'denied' %}
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-error-text-light dark:text-error-text text-white">
+                        Denied
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Requester Information -->
+        <div class="mb-8 p-6 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+            <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Requester Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Name</label>
+                    <p class="text-text-primary-light dark:text-text-primary-dark">
+                        {{ join_request.user.get_full_name|default:"Not provided" }}
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Email</label>
+                    <p class="text-text-primary-light dark:text-text-primary-dark">{{ join_request.user.email }}</p>
+                </div>
+                <div>
+                    <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Role</label>
+                    <p class="text-text-primary-light dark:text-text-primary-dark capitalize">{{ join_request.user.role }}</p>
+                </div>
+                <div>
+                    <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Member Since</label>
+                    <p class="text-text-primary-light dark:text-text-primary-dark">{{ join_request.user.date_joined|date:"F d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Request Details -->
+        <div class="mb-8 p-6 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+            <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Request Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Organization</label>
+                    <p class="text-text-primary-light dark:text-text-primary-dark">{{ join_request.school_group.name }}</p>
+                </div>
+                <div>
+                    <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Requested At</label>
+                    <p class="text-text-primary-light dark:text-text-primary-dark">
+                        {{ join_request.requested_at|date:"F d, Y g:i A" }}
+                    </p>
+                </div>
+                {% if join_request.reviewed_at %}
+                    <div>
+                        <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Reviewed At</label>
+                        <p class="text-text-primary-light dark:text-text-primary-dark">
+                            {{ join_request.reviewed_at|date:"F d, Y g:i A" }}
+                        </p>
+                    </div>
+                {% endif %}
+                {% if join_request.reviewed_by %}
+                    <div>
+                        <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Reviewed By</label>
+                        <p class="text-text-primary-light dark:text-text-primary-dark">
+                            {{ join_request.reviewed_by.get_full_name|default:join_request.reviewed_by.email }}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+            {% if join_request.notes %}
+                <div class="mt-4">
+                    <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Notes</label>
+                    <p class="text-text-primary-light dark:text-text-primary-dark whitespace-pre-wrap">{{ join_request.notes }}</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Membership Status -->
+        {% if membership %}
+            <div class="mb-8 p-6 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Membership Status</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Status</label>
+                        <p class="text-text-primary-light dark:text-text-primary-dark capitalize">{{ membership.status }}</p>
+                    </div>
+                    {% if membership.joined_at %}
+                        <div>
+                            <label class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-1">Joined At</label>
+                            <p class="text-text-primary-light dark:text-text-primary-dark">
+                                {{ membership.joined_at|date:"F d, Y g:i A" }}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Actions -->
+        {% if join_request.status == 'pending' %}
+            <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <form method="post" action="{% url 'accounts:admin_accept_join_request' join_request.id %}" class="flex-1">
+                    {% csrf_token %}
+                    <button type="submit" onclick="return confirm('Accept this join request? The user will become a member of {{ join_request.school_group.name }} organization.')" class="w-full bg-success-text-light dark:bg-success-text hover:bg-success-text-light dark:hover:bg-success-text text-white font-medium py-2 px-6 rounded-md transition-colors">
+                        Accept Request
+                    </button>
+                </form>
+                <form method="post" action="{% url 'accounts:admin_deny_join_request' join_request.id %}" class="flex-1">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="deny_notes" class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-2">Notes (optional)</label>
+                        <textarea name="notes" id="deny_notes" rows="3" class="w-full px-4 py-2 rounded-md bg-input-bg-light dark:bg-deep-dark border border-[rgba(15,23,42,0.14)] dark:border-[rgba(148,163,184,0.25)] text-text-primary-light dark:text-text-primary-dark placeholder:text-text-muted-light dark:placeholder:text-text-muted-dark focus:outline-none focus:ring-2 focus:ring-light-blue-focus dark:focus:ring-calm-blue-focus transition-colors" placeholder="Add notes about why this request was denied..."></textarea>
+                    </div>
+                    <button type="submit" onclick="return confirm('Deny this join request?')" class="w-full bg-error-text-light dark:bg-error-text hover:bg-error-text-light dark:hover:bg-error-text text-white font-medium py-2 px-6 rounded-md transition-colors">
+                        Deny Request
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}Superadmin Dashboard - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-2">Superadmin Dashboard</h1>
+        <p class="text-text-secondary-light dark:text-text-secondary-dark">System-wide overview and management</p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <a href="{% url 'accounts:superadmin_schoolgroups' %}" class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover">
+            <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">School Groups</h3>
+            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">Manage organizations</p>
+        </a>
+        <a href="{% url 'accounts:superadmin_roles' %}" class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover">
+            <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Roles</h3>
+            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">Manage user roles</p>
+        </a>
+        <a href="{% url 'audit:admin_audit_log_list' %}" class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover">
+            <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Audit Logs</h3>
+            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">View system activity</p>
+        </a>
+        <a href="{% url 'accounts:superadmin_settings' %}" class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover">
+            <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Settings</h3>
+            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">System configuration</p>
+        </a>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Users Stats -->
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Total Users</h3>
+            </div>
+            <p class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.total_users }}</p>
+            <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">
+                {{ stats.total_admins }} admins, {{ stats.total_superadmins }} superadmins
+            </p>
+        </div>
+
+        <!-- School Groups Stats -->
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">School Groups</h3>
+            </div>
+            <p class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.total_school_groups }}</p>
+            <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">
+                {{ stats.active_school_groups }} active
+            </p>
+        </div>
+
+        <!-- Chats Stats -->
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Total Chats</h3>
+            </div>
+            <p class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.total_chats }}</p>
+            <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">
+                {{ stats.active_chats }} active
+            </p>
+        </div>
+
+        <!-- Tickets Stats -->
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Total Tickets</h3>
+            </div>
+            <p class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.total_tickets }}</p>
+            <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">
+                {{ stats.open_tickets }} open
+            </p>
+        </div>
+    </div>
+
+    <!-- Additional Stats Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-2">Knowledge Base</h3>
+            <p class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.total_articles }}</p>
+            <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">
+                {{ stats.published_articles }} published
+            </p>
+        </div>
+
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-2">Audit Logs</h3>
+            <p class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.total_audit_logs }}</p>
+            <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">
+                System activity records
+            </p>
+        </div>
+
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-2">Pending Requests</h3>
+            <p class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.pending_join_requests }}</p>
+            <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">
+                Join requests awaiting review
+            </p>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark">Recent Activity</h2>
+            <a href="{% url 'audit:admin_audit_log_list' %}" class="text-sm text-light-blue dark:text-calm-blue hover:underline">View All</a>
+        </div>
+        {% if recent_activity %}
+            <div class="space-y-3">
+                {% for log in recent_activity %}
+                    <div class="flex items-start justify-between p-3 bg-light-card-hover dark:bg-dark-card-hover rounded-md">
+                        <div class="flex-1">
+                            <p class="text-sm text-text-primary-light dark:text-text-primary-dark">
+                                <span class="font-medium">{{ log.get_action_type_display }}</span>
+                                {% if log.actor %}
+                                    by <span class="text-light-blue dark:text-calm-blue">{{ log.actor.email }}</span>
+                                {% else %}
+                                    by System
+                                {% endif %}
+                            </p>
+                            <p class="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-1">
+                                {{ log.description }}
+                            </p>
+                            {% if log.school_group %}
+                                <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">
+                                    Organization: {{ log.school_group.name }}
+                                </p>
+                            {% endif %}
+                        </div>
+                        <div class="text-xs text-text-muted-light dark:text-text-muted-dark ml-4">
+                            {{ log.created_at|timesince }} ago
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-text-secondary-light dark:text-text-secondary-dark text-sm">No recent activity</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent School Groups -->
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark">Recent School Groups</h2>
+            <a href="{% url 'accounts:superadmin_schoolgroups' %}" class="text-sm text-light-blue dark:text-calm-blue hover:underline">View All</a>
+        </div>
+        {% if school_groups %}
+            <div class="space-y-3">
+                {% for group in school_groups %}
+                    <div class="flex items-center justify-between p-3 bg-light-card-hover dark:bg-dark-card-hover rounded-md">
+                        <div>
+                            <a href="{% url 'accounts:superadmin_schoolgroup_detail' group.id %}" class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:text-light-blue dark:hover:text-calm-blue">
+                                {{ group.name }}
+                            </a>
+                            <p class="text-xs text-text-secondary-light dark:text-text-secondary-dark mt-1">
+                                {{ group.member_count }} members • Plan: {{ group.get_plan_display }}
+                            </p>
+                        </div>
+                        <div class="text-xs text-text-muted-light dark:text-text-muted-dark">
+                            {{ group.created_at|date:"M d, Y" }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-text-secondary-light dark:text-text-secondary-dark text-sm">No school groups yet</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

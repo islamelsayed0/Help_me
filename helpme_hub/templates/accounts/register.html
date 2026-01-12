@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-12">
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-2">Create Your Account</h1>
+            <p class="text-text-secondary-light dark:text-text-secondary-dark">Join HelpMe Hub today</p>
+        </div>
+        
+        <form method="post" action="{% url 'accounts:register' %}">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="mb-4 p-4 bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text rounded-md transition-colors">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <div class="mb-4">
+                <label for="id_email" class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-2">Email Address</label>
+                {{ form.email }}
+            </div>
+            
+            <div class="mb-4">
+                <label for="id_first_name" class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-2">First Name</label>
+                {{ form.first_name }}
+            </div>
+            
+            <div class="mb-4">
+                <label for="id_last_name" class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-2">Last Name</label>
+                {{ form.last_name }}
+            </div>
+            
+            <div class="mb-4">
+                <label for="id_password1" class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-2">Password</label>
+                {{ form.password1 }}
+                <div class="mt-2 text-xs text-text-muted-light dark:text-text-muted-dark">
+                    <p class="font-medium mb-1">Password requirements:</p>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        <li>Minimum 6 characters</li>
+                        <li>At least one uppercase letter</li>
+                        <li>At least one special character (symbol)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <label for="id_password2" class="block text-text-secondary-light dark:text-text-secondary-dark text-sm font-medium mb-2">Confirm Password</label>
+                {{ form.password2 }}
+            </div>
+            
+            <button type="submit" class="w-full bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium py-2 px-4 rounded-md transition-colors">
+                Create Account
+            </button>
+            
+            {% if google_oauth_enabled %}
+            <div class="mt-6 text-center">
+                <p class="text-text-muted-light dark:text-text-muted-dark text-sm mb-4">────── or ──────</p>
+                <a href="{{ google_login_url }}" class="inline-flex items-center justify-center w-full bg-white hover:bg-gray-100 text-gray-900 font-medium py-2 px-4 rounded-md transition-colors">
+                    <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Sign up with Google
+                </a>
+            </div>
+            {% endif %}
+            
+            <div class="mt-6 text-center">
+                <p class="text-text-secondary-light dark:text-text-secondary-dark text-sm">
+                    Already have an account? 
+                    <a href="{% url 'accounts:login' %}" class="text-light-blue dark:text-calm-blue hover:text-light-blue-hover dark:hover:text-calm-blue-hover">Sign In</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

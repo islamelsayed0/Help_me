@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Sign In Via Google - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-12">
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <div class="text-center mb-8">
+            <div class="mb-4">
+                <svg class="mx-auto h-16 w-16 text-purple-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-2">Sign In Via Google</h1>
+            <p class="text-text-secondary-light dark:text-text-secondary-dark">You are about to sign in using a third-party account from Google.</p>
+        </div>
+        
+        {% if process == "connect" %}
+            <div class="mb-6 p-4 bg-info-bg-light dark:bg-info-bg rounded-md border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <p class="text-text-primary-light dark:text-text-primary-dark text-sm">
+                    You are about to connect a new third-party account from Google.
+                </p>
+            </div>
+        {% else %}
+            <div class="mb-6 p-4 bg-info-bg-light dark:bg-info-bg rounded-md border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <p class="text-text-primary-light dark:text-text-primary-dark text-sm">
+                    By signing in with Google, you will be redirected to Google's authentication page. 
+                    After successful authentication, you will be redirected back to HelpMe Hub.
+                </p>
+            </div>
+        {% endif %}
+        
+        <form method="post" action="{% url 'socialaccount_login' provider.id %}">
+            {% csrf_token %}
+            
+            {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+            {% endif %}
+            
+            <button type="submit" class="w-full bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium py-3 px-4 rounded-md transition-colors mb-4">
+                Continue
+            </button>
+            
+            <div class="text-center">
+                <a href="{% url 'accounts:login' %}" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark text-sm">
+                    ← Back to Sign In
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+

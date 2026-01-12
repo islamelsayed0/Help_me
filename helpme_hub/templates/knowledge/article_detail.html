@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ article.title }} - Knowledge Base - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8">
+    <div class="bg-light-card dark:bg-dark-card rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <!-- Article Header -->
+        <div class="p-6 border-b border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+            <div class="flex items-center justify-between mb-4">
+                <a href="{% url 'knowledge:article_list' %}" class="text-sm text-text-muted-light dark:text-text-muted-dark hover:text-text-primary-light dark:hover:text-text-primary-dark transition-colors">
+                    ← Back to Knowledge Base
+                </a>
+            </div>
+            <div class="flex items-center gap-3 mb-3">
+                <span class="px-3 py-1 text-sm font-medium rounded-full bg-light-blue dark:bg-calm-blue text-white">
+                    {{ article.get_category_display }}
+                </span>
+                {% if article.tags %}
+                    <div class="flex flex-wrap gap-2">
+                        {% for tag in article.tags %}
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark">
+                                {{ tag }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">{{ article.title }}</h1>
+            <div class="flex items-center gap-4 text-sm text-text-muted-light dark:text-text-muted-dark">
+                <span>{{ article.view_count }} views</span>
+                {% if article.helpful_votes > 0 %}
+                    <span>{{ article.helpful_votes }} helpful</span>
+                {% endif %}
+                {% if article.published_at %}
+                    <span>Published {{ article.published_at|date:"M d, Y" }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Article Content -->
+        <div class="p-6">
+            <div class="prose prose-invert max-w-none prose-headings:text-text-primary-light dark:prose-headings:text-text-primary-dark prose-p:text-text-primary-light dark:prose-p:text-text-primary-dark prose-strong:text-text-primary-light dark:prose-strong:text-text-primary-dark prose-a:text-light-blue dark:prose-a:text-calm-blue prose-code:text-text-primary-light dark:prose-code:text-text-primary-dark prose-pre:bg-light-card-hover dark:prose-pre:bg-dark-card-hover">
+                {{ rendered_content|safe }}
+            </div>
+
+            <!-- Helpful Button -->
+            <div class="mt-8 pt-6 border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <button onclick="markHelpful({{ article.id }})" class="px-6 py-2 bg-light-card-hover dark:bg-dark-card-hover hover:bg-light-card dark:hover:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark font-medium rounded-md transition-colors border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                    👍 Was this helpful? ({{ article.helpful_votes }})
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Articles -->
+    {% if related_articles %}
+        <div class="mt-8">
+            <h2 class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Related Articles</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for related in related_articles %}
+                    <a href="{% url 'knowledge:article_detail' related.id %}" class="block bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover">
+                        <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2 line-clamp-2">
+                            {{ related.title }}
+                        </h3>
+                        <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark line-clamp-2">
+                            {{ related.get_excerpt }}
+                        </p>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function markHelpful(articleId) {
+    fetch(`/knowledge/${articleId}/helpful/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+</script>
+{% endblock %}

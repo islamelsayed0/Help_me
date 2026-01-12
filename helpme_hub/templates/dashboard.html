@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-0">
+    <h1 class="text-2xl sm:text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4 sm:mb-6">Dashboard</h1>
+    
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 sm:p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-4 sm:mb-6 transition-colors light-card-shadow">
+        <h2 class="text-lg sm:text-xl font-semibold text-text-primary-light dark:text-text-primary-dark mb-3 sm:mb-4">Welcome, {{ user.first_name|default:user.email }}!</h2>
+        <div class="space-y-2">
+            <p class="text-sm sm:text-base text-text-secondary-light dark:text-text-secondary-dark">
+                You are logged in as a <span class="text-light-blue dark:text-calm-blue capitalize">{{ user.role }}</span>.
+            </p>
+            <div class="flex items-center gap-2">
+                <span class="text-text-secondary-light dark:text-text-secondary-dark text-xs sm:text-sm">Username:</span>
+                <span class="text-text-primary-light dark:text-text-primary-dark text-xs sm:text-sm font-mono">{{ user.username|default:"Not set" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mb-6 sm:mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-text-primary-light dark:text-text-primary-dark mb-3 sm:mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <a href="{% url 'chats:create_chat' %}" class="bg-light-card dark:bg-dark-card rounded-lg p-6 border-2 border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-all light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover hover:border-light-blue dark:hover:border-calm-blue hover:shadow-lg group">
+                <div class="text-4xl mb-3">💬</div>
+                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2 group-hover:text-light-blue dark:group-hover:text-calm-blue transition-colors">Start New Chat</h3>
+                <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">Get help from AI or admins</p>
+            </a>
+            <a href="{% url 'tickets:create_ticket' %}" class="bg-light-card dark:bg-dark-card rounded-lg p-6 border-2 border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-all light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover hover:border-light-blue dark:hover:border-calm-blue hover:shadow-lg group">
+                <div class="text-4xl mb-3">🎫</div>
+                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2 group-hover:text-light-blue dark:group-hover:text-calm-blue transition-colors">Create Ticket</h3>
+                <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">Create a new support ticket</p>
+            </a>
+            <a href="{% url 'tickets:ticket_list' %}" class="bg-light-card dark:bg-dark-card rounded-lg p-6 border-2 border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-all light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover hover:border-light-blue dark:hover:border-calm-blue hover:shadow-lg group">
+                <div class="text-4xl mb-3">📋</div>
+                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2 group-hover:text-light-blue dark:group-hover:text-calm-blue transition-colors">My Tickets</h3>
+                <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">View your support tickets</p>
+            </a>
+            <a href="{% url 'knowledge:article_list' %}" class="bg-light-card dark:bg-dark-card rounded-lg p-6 border-2 border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-all light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover hover:border-light-blue dark:hover:border-calm-blue hover:shadow-lg group">
+                <div class="text-4xl mb-3">📚</div>
+                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2 group-hover:text-light-blue dark:group-hover:text-calm-blue transition-colors">Knowledge Base</h3>
+                <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">Browse help articles</p>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Join Another Organization Section -->
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">
+        <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Join Another Organization</h2>
+        <p class="text-text-secondary-light dark:text-text-secondary-dark text-sm mb-4">
+            Enter an access code to request membership in an additional organization.
+        </p>
+        
+        <form method="post" action="{% url 'accounts:request_join' %}?next={% url 'accounts:dashboard' %}">
+            {% csrf_token %}
+            
+            {% if join_form.errors %}
+                <div class="mb-4 p-4 bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text rounded-md transition-colors">
+                    {% for field in join_form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {{ join_form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    {{ join_form.access_code }}
+                </div>
+                <button type="submit" class="bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium py-2 px-6 rounded-md transition-colors whitespace-nowrap">
+                    Join Organization
+                </button>
+            </div>
+            <p class="mt-2 text-xs text-text-muted-light dark:text-text-muted-dark">
+                Format: <code class="text-xs">XXXX-XXXX-XXXX</code> (dashes optional)
+            </p>
+        </form>
+        
+        <div class="mt-4">
+            <a href="{% url 'accounts:join_organization' %}" class="text-sm text-light-blue dark:text-calm-blue hover:text-light-blue-hover dark:hover:text-calm-blue-hover">
+                View all organizations and pending requests →
+            </a>
+        </div>
+    </div>
+
+    <!-- Current Organizations -->
+    {% if user_organizations %}
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">
+            <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Your Organizations</h2>
+            <div class="space-y-3">
+                {% for org in user_organizations %}
+                    <div class="p-4 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-text-primary-light dark:text-text-primary-dark">{{ org.name }}</h3>
+                                {% if user.current_organization and user.current_organization.id == org.id %}
+                                    <span class="text-xs text-text-muted-light dark:text-text-muted-dark">Current organization</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Pending Requests -->
+    {% if pending_requests %}
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">
+            <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark mb-4">Pending Join Requests</h2>
+            <div class="space-y-3">
+                {% for request in pending_requests %}
+                    <div class="p-4 bg-warning-bg-light dark:bg-warning-bg rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-text-primary-light dark:text-text-primary-dark">{{ request.school_group.name }}</h3>
+                                <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                    Request submitted on {{ request.created_at|date:"F d, Y" }}
+                                </p>
+                                <p class="text-xs text-warning-text-light dark:text-warning-text mt-1">
+                                    Waiting for administrator approval
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Statistics Section -->
+    <div class="mb-6 sm:mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-text-primary-light dark:text-text-primary-dark mb-3 sm:mb-4">Statistics</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <!-- Chats Statistics -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Total Chats</h3>
+                    <span class="text-2xl">💬</span>
+                </div>
+                <p class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.total_chats }}</p>
+                <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-2">
+                    {{ stats.active_chats }} active, {{ stats.resolved_chats }} resolved
+                </p>
+            </div>
+            
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Active Chats</h3>
+                    <span class="text-2xl">🟢</span>
+                </div>
+                <p class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.active_chats }}</p>
+                <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-2">
+                    Currently in progress
+                </p>
+            </div>
+            
+            <!-- Tickets Statistics -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Total Tickets</h3>
+                    <span class="text-2xl">🎫</span>
+                </div>
+                <p class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.total_tickets }}</p>
+                <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-2">
+                    {{ stats.open_tickets }} open, {{ stats.in_progress_tickets }} in progress
+                </p>
+            </div>
+            
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">Resolved Tickets</h3>
+                    <span class="text-2xl">✅</span>
+                </div>
+                <p class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ stats.resolved_tickets }}</p>
+                <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-2">
+                    Successfully resolved
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+        <!-- Recent Chats -->
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark">Recent Chats</h2>
+                <a href="{% url 'chats:chat_list' %}" class="text-sm text-light-blue dark:text-calm-blue hover:text-light-blue-hover dark:hover:text-calm-blue-hover">View All</a>
+            </div>
+            {% if recent_chats %}
+                <div class="space-y-3">
+                    {% for chat in recent_chats %}
+                        <a href="{% url 'chats:chat_detail' chat.id %}" class="block p-4 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] hover:border-light-blue dark:hover:border-calm-blue transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h3 class="font-semibold text-text-primary-light dark:text-text-primary-dark">Chat #{{ chat.id }}</h3>
+                                        <span class="px-2 py-0.5 text-xs font-medium rounded-full {% if chat.status == 'active' %}bg-success-bg-light dark:bg-success-bg text-success-text-light dark:text-success-text{% elif chat.status == 'resolved' %}bg-text-muted-light dark:bg-text-muted-dark text-text-secondary-light dark:text-text-secondary-dark{% else %}bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text{% endif %}">
+                                            {{ chat.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-text-muted-light dark:text-text-muted-dark">
+                                        {{ chat.updated_at|timesince }} ago
+                                    </p>
+                                </div>
+                                <svg class="w-5 h-5 text-text-muted-light dark:text-text-muted-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <p class="text-text-muted-light dark:text-text-muted-dark mb-4">No chats yet</p>
+                    <a href="{% url 'chats:create_chat' %}" class="inline-block bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white font-medium py-2 px-4 rounded-md transition-colors">
+                        Start Your First Chat
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Recent Tickets -->
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-text-primary-light dark:text-text-primary-dark">Recent Tickets</h2>
+                <a href="{% url 'tickets:ticket_list' %}" class="text-sm text-light-blue dark:text-calm-blue hover:text-light-blue-hover dark:hover:text-calm-blue-hover">View All</a>
+            </div>
+            {% if recent_tickets %}
+                <div class="space-y-3">
+                    {% for ticket in recent_tickets %}
+                        <a href="{% url 'tickets:ticket_detail' ticket.id %}" class="block p-4 bg-light-card-hover dark:bg-dark-card-hover rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] hover:border-light-blue dark:hover:border-calm-blue transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h3 class="font-semibold text-text-primary-light dark:text-text-primary-dark">#{{ ticket.id }}: {{ ticket.title|truncatechars:30 }}</h3>
+                                        <span class="px-2 py-0.5 text-xs font-medium rounded-full {% if ticket.status == 'open' %}bg-warning-bg-light dark:bg-warning-bg text-warning-text-light dark:text-warning-text{% elif ticket.status == 'in_progress' %}bg-light-blue dark:bg-calm-blue text-white{% elif ticket.status == 'resolved' %}bg-success-bg-light dark:bg-success-bg text-success-text-light dark:text-success-text{% else %}bg-text-muted-light dark:bg-text-muted-dark text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+                                            {{ ticket.get_status_display }}
+                                        </span>
+                                        {% if ticket.priority == 'high' or ticket.priority == 'urgent' %}
+                                            <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text">
+                                                {{ ticket.get_priority_display }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-xs text-text-muted-light dark:text-text-muted-dark">
+                                        {{ ticket.updated_at|timesince }} ago
+                                    </p>
+                                </div>
+                                <svg class="w-5 h-5 text-text-muted-light dark:text-text-muted-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <p class="text-text-muted-light dark:text-text-muted-dark mb-4">No tickets yet</p>
+                    <a href="{% url 'tickets:create_ticket' %}" class="inline-block bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white font-medium py-2 px-4 rounded-md transition-colors">
+                        Create Your First Ticket
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

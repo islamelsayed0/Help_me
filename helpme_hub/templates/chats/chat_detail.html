@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat #{{ chat.id }} - HelpMe Hub{% endblock %}
+
+{% block extra_css %}
+<style>
+    #messages-container {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    .message-user {
+        background-color: #2563EB;
+        color: white;
+        margin-left: auto;
+    }
+    .message-admin {
+        background-color: #10B981;
+        color: white;
+    }
+    .message-ai {
+        background-color: #6366F1;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8">
+    <div class="bg-light-card dark:bg-dark-card rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <!-- Chat Header -->
+        <div class="p-6 border-b border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] bg-light-card-hover dark:bg-dark-card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">Chat #{{ chat.id }}</h1>
+                    <div class="flex items-center gap-3 mt-2">
+                        <span class="px-3 py-1 text-sm font-medium rounded-full {% if chat.status == 'active' %}bg-success-bg-light dark:bg-success-bg text-success-text-light dark:text-success-text{% elif chat.status == 'escalated' %}bg-warning-bg-light dark:bg-warning-bg text-warning-text-light dark:text-warning-text{% elif chat.status == 'resolved' %}bg-text-muted-light dark:bg-text-muted-dark text-text-secondary-light dark:text-text-secondary-dark{% else %}bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text{% endif %}">
+                            {{ chat.get_status_display }}
+                        </span>
+                        {% if chat.assigned_to %}
+                            <span class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                Assigned to: {{ chat.assigned_to.email }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% if chat.status == 'active' %}
+                        <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark mt-3">
+                            💡 <strong>Tip:</strong> Type your message below. Our AI assistant or an admin will help you step-by-step!
+                        </p>
+                    {% endif %}
+                </div>
+                <div class="flex gap-2">
+                    {% if chat.status == 'active' %}
+                        <a href="{% url 'chats:escalate_chat' chat.id %}" class="px-4 py-2 bg-warning-text-light dark:text-warning-text hover:bg-opacity-80 text-white font-medium rounded-md transition-colors">
+                            Escalate to Ticket
+                        </a>
+                    {% elif chat.status == 'escalated' and chat.ticket %}
+                        <a href="{% url 'tickets:ticket_detail' chat.ticket.id %}" class="px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white font-medium rounded-md transition-colors">
+                            View Ticket #{{ chat.ticket.id }}
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'chats:chat_list' %}" class="px-4 py-2 bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark font-medium rounded-md transition-colors">
+                        Back to Chats
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="messages-container" class="p-6 space-y-4">
+            {% for message in messages %}
+                <div class="flex {% if message.sender_type == 'user' %}justify-end{% else %}justify-start{% endif %}">
+                    <div class="max-w-3xl px-4 py-2 rounded-lg {% if message.sender_type == 'user' %}message-user{% elif message.sender_type == 'admin' %}message-admin{% else %}message-ai{% endif %}">
+                        <div class="text-xs mb-1 opacity-75">
+                            {% if message.sender_type == 'user' %}
+                                You
+                            {% elif message.sender_type == 'admin' %}
+                                {{ message.sender.email }}
+                            {% else %}
+                                AI Assistant
+                            {% endif %}
+                        </div>
+                        <div class="whitespace-pre-wrap">{{ message.content }}</div>
+                        <div class="text-xs mt-1 opacity-75">{{ message.created_at|date:"M d, Y g:i A" }}</div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-center text-text-muted-light dark:text-text-muted-dark py-12">
+                    <div class="text-6xl mb-4">👋</div>
+                    <p class="text-lg font-semibold mb-2">No messages yet!</p>
+                    <p class="text-sm">Start the conversation by typing your message below.</p>
+                    <p class="text-xs mt-4 text-text-muted-light dark:text-text-muted-dark">
+                        💡 Don't worry - just describe your problem in simple words and we'll help you!
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Message Input -->
+        {% if chat.status == 'active' %}
+            <div class="p-6 border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] bg-light-card-hover dark:bg-dark-card-hover">
+                <div class="mb-3">
+                    <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark text-center">
+                        💬 <strong>Type your message below</strong> - Our AI assistant or an admin will help you!
+                    </p>
+                </div>
+                <form method="post" action="{% url 'chats:send_message' chat.id %}" id="message-form">
+                    {% csrf_token %}
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex-1">
+                            {{ form.content }}
+                            <p class="mt-2 text-xs text-text-muted-light dark:text-text-muted-dark">
+                                💡 <strong>Tip:</strong> Press <strong>Enter</strong> to send your message. Press <strong>Shift+Enter</strong> for a new line.
+                            </p>
+                        </div>
+                        <button type="submit" class="px-8 py-3 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-semibold text-lg rounded-md transition-colors whitespace-nowrap shadow-lg hover:shadow-xl">
+                            Send 📤
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <div class="p-6 border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] text-center text-text-muted-light dark:text-text-muted-dark">
+                This chat is {{ chat.get_status_display|lower }}. You cannot send new messages.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Polling Script -->
+<script>
+    const chatId = {{ chat.id }};
+    let lastMessageId = {% if messages %}{{ messages.last.id|default:0 }}{% else %}0{% endif %};
+    let pollingInterval;
+    let isPolling = false;
+
+    function startPolling() {
+        if (isPolling) return;
+        isPolling = true;
+        
+        pollingInterval = setInterval(() => {
+            if (document.hidden) return; // Don't poll when tab is hidden
+            
+            fetch(`/chats/${chatId}/poll/?last_message_id=${lastMessageId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            addMessageToUI(msg);
+                            lastMessageId = Math.max(lastMessageId, msg.id);
+                        });
+                        scrollToBottom();
+                    }
+                })
+                .catch(error => console.error('Polling error:', error));
+        }, 3000); // Poll every 3 seconds
+    }
+
+    function addMessageToUI(message) {
+        const container = document.getElementById('messages-container');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`;
+        
+        const senderName = message.sender_type === 'user' ? 'You' : 
+                          message.sender_type === 'admin' ? message.sender_name : 'AI Assistant';
+        const messageClass = message.sender_type === 'user' ? 'message-user' : 
+                            message.sender_type === 'admin' ? 'message-admin' : 'message-ai';
+        
+        const date = new Date(message.created_at);
+        const formattedDate = date.toLocaleString();
+        
+        messageDiv.innerHTML = `
+            <div class="max-w-3xl px-4 py-2 rounded-lg ${messageClass}">
+                <div class="text-xs mb-1 opacity-75">${senderName}</div>
+                <div class="whitespace-pre-wrap">${escapeHtml(message.content)}</div>
+                <div class="text-xs mt-1 opacity-75">${formattedDate}</div>
+            </div>
+        `;
+        
+        container.appendChild(messageDiv);
+    }
+
+    function scrollToBottom() {
+        const container = document.getElementById('messages-container');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Start polling when page loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startPolling);
+    } else {
+        startPolling();
+    }
+
+    // Stop polling when page is hidden, resume when visible
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            clearInterval(pollingInterval);
+            isPolling = false;
+        } else {
+            startPolling();
+        }
+    });
+
+    // Enter key to send message (Shift+Enter for new line)
+    function setupEnterKeySubmit() {
+        const messageForm = document.getElementById('message-form');
+        const messageTextarea = document.getElementById('id_content');
+        
+        if (messageForm && messageTextarea) {
+            messageTextarea.addEventListener('keydown', function(e) {
+                // If Enter is pressed without Shift, submit the form
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // Prevent default new line
+                    
+                    // Only submit if there's actual content (not just whitespace)
+                    const messageText = messageTextarea.value.trim();
+                    if (messageText) {
+                        messageForm.submit();
+                    }
+                }
+                // If Shift+Enter, allow default behavior (new line)
+            });
+            
+            // Auto-resize textarea as user types
+            messageTextarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px'; // Max height 200px
+            });
+        }
+    }
+    
+    // Set up Enter key submit when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupEnterKeySubmit);
+    } else {
+        setupEnterKeySubmit(); // DOM already loaded
+    }
+</script>
+{% endblock %}

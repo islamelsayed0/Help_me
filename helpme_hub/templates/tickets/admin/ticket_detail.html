@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}Ticket #{{ ticket.id }} - Admin - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8">
+    <div class="bg-light-card dark:bg-dark-card rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <!-- Ticket Header -->
+        <div class="p-6 border-b border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">Ticket #{{ ticket.id }}</h1>
+                    <h2 class="text-xl mt-2 text-text-primary-light dark:text-text-primary-dark">{{ ticket.title }}</h2>
+                    <div class="flex items-center gap-3 mt-2">
+                        <span class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                            User: {{ ticket.user.email }}
+                        </span>
+                        <span class="px-3 py-1 text-sm font-medium rounded-full {% if ticket.status == 'open' %}bg-warning-bg-light dark:bg-warning-bg text-warning-text-light dark:text-warning-text{% elif ticket.status == 'in_progress' %}bg-light-blue dark:bg-calm-blue text-white{% elif ticket.status == 'resolved' %}bg-success-bg-light dark:bg-success-bg text-success-text-light dark:text-success-text{% else %}bg-text-muted-light dark:text-text-muted-dark text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+                            {{ ticket.get_status_display }}
+                        </span>
+                        <span class="px-3 py-1 text-sm font-medium rounded-full {% if ticket.priority == 'urgent' %}bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text{% elif ticket.priority == 'high' %}bg-warning-bg-light dark:bg-warning-bg text-warning-text-light dark:text-warning-text{% elif ticket.priority == 'low' %}bg-text-muted-light dark:text-text-muted-dark text-text-secondary-light dark:text-text-secondary-dark{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% endif %}">
+                            {{ ticket.get_priority_display }} Priority
+                        </span>
+                    </div>
+                </div>
+                <a href="{% url 'tickets:admin_board' %}" class="px-4 py-2 bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark font-medium rounded-md transition-colors">
+                    Back to Board
+                </a>
+            </div>
+        </div>
+
+        <!-- Ticket Details -->
+        <div class="p-6 space-y-6">
+            <div>
+                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">Description</h3>
+                <p class="text-text-secondary-light dark:text-text-secondary-dark whitespace-pre-wrap">{{ ticket.description }}</p>
+            </div>
+
+            <!-- Admin Actions -->
+            <div class="border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] pt-6 space-y-4">
+                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark">Ticket Management</h3>
+                
+                <!-- Assign/Unassign -->
+                <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4">
+                    <h4 class="text-md font-medium text-text-primary-light dark:text-text-primary-dark mb-3">Assignment</h4>
+                    <form method="post" action="{% url 'tickets:assign_ticket' ticket.id %}">
+                        {% csrf_token %}
+                        <div class="flex gap-2">
+                            {{ assign_form.assigned_to }}
+                            <button type="submit" class="px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white font-medium rounded-md transition-colors">
+                                {% if ticket.assigned_to %}Reassign{% else %}Assign{% endif %}
+                            </button>
+                            {% if ticket.assigned_to %}
+                                <a href="{% url 'tickets:assign_ticket' ticket.id %}?unassign=true" class="px-4 py-2 bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark font-medium rounded-md transition-colors">
+                                    Unassign
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Status and Priority -->
+                <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4">
+                    <h4 class="text-md font-medium text-text-primary-light dark:text-text-primary-dark mb-3">Status & Priority</h4>
+                    <form method="post" action="{% url 'tickets:update_status' ticket.id %}">
+                        {% csrf_token %}
+                        <div class="grid grid-cols-2 gap-4">
+                            {{ status_form.status.label_tag }}
+                            {{ status_form.status }}
+                            {{ status_form.priority.label_tag }}
+                            {{ status_form.priority }}
+                        </div>
+                        <button type="submit" class="mt-4 px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white font-medium rounded-md transition-colors">
+                            Update Status
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Resolution Notes -->
+                {% if ticket.status != 'closed' %}
+                    <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4">
+                        <h4 class="text-md font-medium text-text-primary-light dark:text-text-primary-dark mb-3">Resolution</h4>
+                        <form method="post" action="{% url 'tickets:add_resolution' ticket.id %}">
+                            {% csrf_token %}
+                            {{ resolution_form.resolution_notes }}
+                            <button type="submit" class="mt-4 px-4 py-2 bg-success-text-light dark:text-success-text hover:bg-opacity-80 text-white font-medium rounded-md transition-colors">
+                                Mark as Resolved
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+
+                <!-- Close Ticket -->
+                {% if ticket.status != 'closed' %}
+                    <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4">
+                        <h4 class="text-md font-medium text-text-primary-light dark:text-text-primary-dark mb-3">Close Ticket</h4>
+                        <form method="post" action="{% url 'tickets:close_ticket' ticket.id %}">
+                            {% csrf_token %}
+                            <textarea name="resolution_notes" rows="3" placeholder="Optional: Add closing notes..." class="w-full px-4 py-2 rounded-md bg-input-bg-light dark:bg-deep-dark border border-[rgba(15,23,42,0.14)] dark:border-[rgba(148,163,184,0.25)] text-text-primary-light dark:text-text-primary-dark placeholder:text-text-muted-light dark:placeholder:text-text-muted-dark focus:outline-none focus:ring-2 focus:ring-light-blue-focus dark:focus:ring-calm-blue-focus transition-colors"></textarea>
+                            <button type="submit" class="mt-4 px-4 py-2 bg-error-text-light dark:text-error-text hover:bg-opacity-80 text-white font-medium rounded-md transition-colors">
+                                Close Ticket
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Resolution Notes Display -->
+            {% if ticket.resolution_notes %}
+                <div class="bg-success-bg-light dark:bg-success-bg rounded-lg p-4 border border-success-text-light dark:border-success-text">
+                    <h3 class="text-lg font-semibold text-success-text-light dark:text-success-text mb-2">Resolution Notes</h3>
+                    <p class="text-success-text-light dark:text-success-text whitespace-pre-wrap">{{ ticket.resolution_notes }}</p>
+                    {% if ticket.resolved_at %}
+                        <p class="text-xs text-success-text-light dark:text-success-text mt-2 opacity-75">
+                            Resolved on {{ ticket.resolved_at|date:"M d, Y g:i A" }}
+                        </p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Linked Chat Transcript -->
+            {% if chat %}
+                <div class="border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] pt-6">
+                    <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-4">Chat Transcript</h3>
+                    <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4 max-h-96 overflow-y-auto">
+                        <div class="space-y-3">
+                            {% for message in chat_messages %}
+                                <div class="flex {% if message.sender_type == 'user' %}justify-start{% elif message.sender_type == 'admin' %}justify-end{% else %}justify-start{% endif %}">
+                                    <div class="max-w-3xl px-4 py-2 rounded-lg {% if message.sender_type == 'user' %}bg-light-blue dark:bg-calm-blue text-white{% elif message.sender_type == 'admin' %}bg-success-text-light dark:text-success-text text-white{% else %}bg-purple-accent text-white{% endif %}">
+                                        <div class="text-xs mb-1 opacity-75">
+                                            {% if message.sender_type == 'user' %}
+                                                {{ message.sender.email }}
+                                            {% elif message.sender_type == 'admin' %}
+                                                You ({{ message.sender.email }})
+                                            {% else %}
+                                                AI Assistant
+                                            {% endif %}
+                                        </div>
+                                        <div class="whitespace-pre-wrap">{{ message.content }}</div>
+                                        <div class="text-xs mt-1 opacity-75">{{ message.created_at|date:"M d, Y g:i A" }}</div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p class="text-text-muted-light dark:text-text-muted-dark text-center">No messages in chat transcript.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <a href="{% url 'chats:admin_chat_detail' chat.id %}" class="inline-block mt-4 text-sm text-light-blue dark:text-calm-blue hover:underline">
+                        View full chat →
+                    </a>
+                </div>
+            {% endif %}
+
+            <!-- Ticket Info -->
+            <div class="border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] pt-6">
+                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-4">Ticket Information</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-text-muted-light dark:text-text-muted-dark">Created:</span>
+                        <span class="text-text-primary-light dark:text-text-primary-dark ml-2">{{ ticket.created_at|date:"M d, Y g:i A" }}</span>
+                    </div>
+                    <div>
+                        <span class="text-text-muted-light dark:text-text-muted-dark">Last Updated:</span>
+                        <span class="text-text-primary-light dark:text-text-primary-dark ml-2">{{ ticket.updated_at|date:"M d, Y g:i A" }}</span>
+                    </div>
+                    {% if ticket.resolved_at %}
+                        <div>
+                            <span class="text-text-muted-light dark:text-text-muted-dark">Resolved:</span>
+                            <span class="text-text-primary-light dark:text-text-primary-dark ml-2">{{ ticket.resolved_at|date:"M d, Y g:i A" }}</span>
+                        </div>
+                    {% endif %}
+                    {% if ticket.closed_at %}
+                        <div>
+                            <span class="text-text-muted-light dark:text-text-muted-dark">Closed:</span>
+                            <span class="text-text-primary-light dark:text-text-primary-dark ml-2">{{ ticket.closed_at|date:"M d, Y g:i A" }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

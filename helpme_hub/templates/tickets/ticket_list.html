@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}My Tickets - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto mt-8">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark">My Tickets</h1>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Total</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ status_counts.all }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Open</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ status_counts.open }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">In Progress</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ status_counts.in_progress }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Resolved</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ status_counts.resolved }}</div>
+        </div>
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+            <div class="text-sm text-text-muted-light dark:text-text-muted-dark">Closed</div>
+            <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ status_counts.closed }}</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-6 flex gap-4">
+        <a href="{% url 'tickets:ticket_list' %}" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if not status_filter %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            All
+        </a>
+        <a href="{% url 'tickets:ticket_list' %}?status=open" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if status_filter == 'open' %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            Open
+        </a>
+        <a href="{% url 'tickets:ticket_list' %}?status=in_progress" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if status_filter == 'in_progress' %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            In Progress
+        </a>
+        <a href="{% url 'tickets:ticket_list' %}?status=resolved" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if status_filter == 'resolved' %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            Resolved
+        </a>
+        <a href="{% url 'tickets:ticket_list' %}?status=closed" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if status_filter == 'closed' %}bg-light-blue dark:bg-calm-blue text-white{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+            Closed
+        </a>
+    </div>
+
+    <!-- Ticket List -->
+    {% if tickets %}
+        <div class="space-y-4">
+            {% for ticket in tickets %}
+                <a href="{% url 'tickets:ticket_detail' ticket.id %}" class="block bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow hover:bg-light-card-hover dark:hover:bg-dark-card-hover">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark">
+                                    {{ ticket.title }}
+                                </h3>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full {% if ticket.status == 'open' %}bg-warning-bg-light dark:bg-warning-bg text-warning-text-light dark:text-warning-text{% elif ticket.status == 'in_progress' %}bg-light-blue dark:bg-calm-blue text-white{% elif ticket.status == 'resolved' %}bg-success-bg-light dark:bg-success-bg text-success-text-light dark:text-success-text{% else %}bg-text-muted-light dark:text-text-muted-dark text-text-secondary-light dark:text-text-secondary-dark{% endif %}">
+                                    {{ ticket.get_status_display }}
+                                </span>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full {% if ticket.priority == 'urgent' %}bg-error-bg-light dark:bg-error-bg text-error-text-light dark:text-error-text{% elif ticket.priority == 'high' %}bg-warning-bg-light dark:bg-warning-bg text-warning-text-light dark:text-warning-text{% elif ticket.priority == 'low' %}bg-text-muted-light dark:text-text-muted-dark text-text-secondary-light dark:text-text-secondary-dark{% else %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% endif %}">
+                                    {{ ticket.get_priority_display }}
+                                </span>
+                            </div>
+                            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-2">
+                                {{ ticket.description|truncatewords:30 }}
+                            </p>
+                            <div class="flex items-center gap-4 text-xs text-text-muted-light dark:text-text-muted-dark">
+                                <span>Created: {{ ticket.created_at|date:"M d, Y" }}</span>
+                                {% if ticket.assigned_to %}
+                                    <span>Assigned to: {{ ticket.assigned_to.email }}</span>
+                                {% else %}
+                                    <span>Unassigned</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-light-card dark:bg-dark-card rounded-lg p-12 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow text-center">
+            <p class="text-text-secondary-light dark:text-text-secondary-dark mb-4">No tickets found.</p>
+            <a href="{% url 'chats:chat_list' %}" class="inline-block bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium py-2 px-6 rounded-md transition-colors">
+                Start a Chat
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

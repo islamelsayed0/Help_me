@@ -1,0 +1,1035 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_protect
+from django.db import models
+import logging
+from .decorators import role_required, membership_required
+from .forms import UserRegistrationForm, JoinRequestForm, CreateOrganizationForm
+from schoolgroups.models import SchoolGroup, JoinRequest, SchoolGroupMembership
+from .utils import has_accepted_membership, get_user_pending_join_request, get_user_school_group, get_user_organizations
+from .models import User
+from django.utils import timezone
+
+logger = logging.getLogger(__name__)
+
+
+def home_view(request):
+    """
+    Root URL view - shows landing page or redirects to dashboard.
+    If logged in, check membership and redirect accordingly.
+    If not logged in, show landing page.
+    """
+    if request.user.is_authenticated:
+        # Check if user has accepted membership
+        if has_accepted_membership(request.user):
+            return redirect('accounts:dashboard')
+        else:
+            # Redirect to pending page if no accepted membership
+            return redirect('accounts:pending')
+    else:
+        return render(request, 'landing.html')
+
+
+def loading_view(request):
+    """Loading page shown during initial app load."""
+    return render(request, 'loading.html')
+
+
+@csrf_protect
+@require_http_methods(['GET', 'POST'])
+def login_view(request):
+    """Custom login view that properly handles authentication errors."""
+    if request.user.is_authenticated:
+        # Redirect authenticated users appropriately
+        if has_accepted_membership(request.user):
+            return redirect('accounts:dashboard')
+        else:
+            return redirect('accounts:pending')
+    
+    if request.method == 'POST':
+        email = request.POST.get('login', '').strip().lower()
+        password = request.POST.get('password', '')
+        remember = request.POST.get('remember') == 'on'
+        
+        if not email or not password:
+            messages.error(request, 'Please enter both email and password.')
+        else:
+            # Try to get user by email (for email-based authentication)
+            try:
+                user_obj = User.objects.get(email=email)
+                
+                # With ACCOUNT_AUTHENTICATION_METHOD = 'email', Allauth expects email as username
+                # Try authentication with email first (for Allauth backend)
+                # Then try with username (for ModelBackend fallback)
+                user = authenticate(request, username=email, password=password)
+                if user is None:
+                    # Fallback to username (for ModelBackend)
+                    user = authenticate(request, username=user_obj.username, password=password)
+                
+                if user is not None and user.is_active:
+                    # User authenticated successfully
+                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                    
+                    if not remember:
+                        request.session.set_expiry(0)  # Session expires when browser closes
+                    else:
+                        request.session.set_expiry(86400 * 30)  # 30 days
+                    
+                    # Redirect based on membership status
+                    if has_accepted_membership(user):
+                        messages.success(request, f'Welcome back, {user.email}!')
+                        return redirect('accounts:dashboard')
+                    else:
+                        messages.success(request, f'Welcome, {user.email}! Please complete your organization membership.')
+                        return redirect('accounts:pending')
+                else:
+                    # Authentication failed - wrong password or inactive account
+                    # Check password manually to provide better error message
+                    if not user_obj.is_active:
+                        messages.error(request, 'This account is inactive. Please contact support.')
+                    elif not user_obj.check_password(password):
+                        # Password is incorrect
+                        messages.error(request, 'Wrong account information. Please check your email and password and try again.')
+                    else:
+                        # Password is correct but authentication still failed - unexpected
+                        messages.error(request, 'An authentication error occurred. Please try again or contact support.')
+            except User.DoesNotExist:
+                # User doesn't exist
+                messages.error(request, 'Wrong account information. Please check your email and password and try again.')
+            except Exception as e:
+                # Unexpected error
+                logger.error(f'Login error: {str(e)}', exc_info=True)
+                messages.error(request, 'An error occurred during login. Please try again.')
+    
+    return render(request, 'accounts/login.html')
+
+
+@require_http_methods(['GET', 'POST'])
+def register_view(request):
+    """User registration view."""
+    import logging
+    import json
+    import os
+    from datetime import datetime
+    logger = logging.getLogger(__name__)
+    
+    # Debug logging helper
+    def debug_log(location, message, data, hypothesis_id):
+        log_path = '/Users/islamelsayed/Documents/Help Me /.cursor/debug.log'
+        try:
+            log_entry = {
+                "timestamp": int(datetime.now().timestamp() * 1000),
+                "location": location,
+                "message": message,
+                "data": data,
+                "sessionId": "debug-session",
+                "runId": "registration-debug",
+                "hypothesisId": hypothesis_id
+            }
+            with open(log_path, 'a') as f:
+                f.write(json.dumps(log_entry) + '\n')
+        except Exception as e:
+            logger.error(f'Failed to write debug log: {e}')
+    
+    # #region agent log
+    debug_log('register_view:41', 'Function entry', {'method': request.method, 'is_authenticated': request.user.is_authenticated}, 'A')
+    # #endregion
+    
+    if request.user.is_authenticated:
+        return redirect('accounts:dashboard')
+    
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        # #region agent log
+        debug_log('register_view:46', 'Form validation', {'is_valid': form.is_valid(), 'errors': dict(form.errors) if form.errors else None}, 'B')
+        # #endregion
+        
+        if form.is_valid():
+            try:
+                # Save user to database
+                # #region agent log
+                debug_log('register_view:50', 'Before user.save()', {'email': form.cleaned_data.get('email'), 'has_password1': 'password1' in form.cleaned_data}, 'C')
+                # #endregion
+                
+                user = form.save()
+                logger.info(f'User created successfully: {user.email} (ID: {user.id})')
+                
+                # #region agent log
+                debug_log('register_view:54', 'After user.save()', {'user_id': user.id, 'user_email': user.email, 'username': user.username, 'has_pk': bool(user.pk)}, 'C')
+                # #endregion
+                
+                # Verify user was saved
+                if not user.pk:
+                    logger.error(f'User save failed - no primary key: {user.email}')
+                    messages.error(request, 'Account creation failed. Please try again.')
+                    return render(request, 'accounts/register.html', {'form': form})
+                
+                # Log in the user
+                try:
+                    # #region agent log
+                    debug_log('register_view:62', 'Before login() call', {'user_id': user.id, 'user_email': user.email, 'session_key_before': request.session.session_key, 'user_authenticated_before': request.user.is_authenticated}, 'A')
+                    # #endregion
+                    
+                    # Since UserCreationForm.save() already hashes the password,
+                    # we can log in directly with the user object.
+                    
+                    # Ensure user has valid id before logging in
+                    if not user.id:
+                        logger.error(f'Cannot login user without ID: {user.email}')
+                        messages.error(request, 'Account creation failed. Please try again.')
+                        return render(request, 'accounts/register.html', {'form': form})
+                    
+                    # Use ModelBackend which is the first backend in AUTHENTICATION_BACKENDS
+                    backend = 'django.contrib.auth.backends.ModelBackend'
+                    
+                    # Log in the user - this sets request.user and persists it in the session
+                    # Django's login() function:
+                    # 1. Sets request.user to the authenticated user
+                    # 2. Stores auth data in session (_auth_user_id, _auth_user_backend)
+                    # 3. Marks session as modified
+                    # SessionMiddleware will save the session when the response is sent
+                    login(request, user, backend=backend)
+                    logger.info(f'Login called for user: {user.email} (ID: {user.id}, username: {user.username}, session_key: {request.session.session_key})')
+                    
+                    # #region agent log
+                    debug_log('register_view:72', 'After login() call', {
+                        'user_id': user.id,
+                        'request_user_id': request.user.id if hasattr(request.user, 'id') else None,
+                        'request_user_is_authenticated': request.user.is_authenticated,
+                        'request_user_email': request.user.email if hasattr(request.user, 'email') else None,
+                        'session_key_after': request.session.session_key,
+                        'session_exists': bool(request.session.session_key),
+                        'backend': backend
+                    }, 'A')
+                    # #endregion
+                    
+                    # CRITICAL: Verify login worked immediately
+                    # After login(), request.user should be the authenticated user
+                    # Django's login() sets request.user immediately, so check right after
+                    if not request.user.is_authenticated or request.user.id != user.id:
+                        logger.error(f'Login() failed - user not authenticated or ID mismatch after login() call: {user.email}, authenticated={request.user.is_authenticated}, user_id={getattr(request.user, "id", None)}, expected_id={user.id}')
+                        # #region agent log
+                        debug_log('register_view:123', 'Login verification failed', {
+                            'user_id': user.id,
+                            'user_email': user.email,
+                            'request_user_authenticated': request.user.is_authenticated,
+                            'request_user_id': request.user.id if hasattr(request.user, 'id') else None,
+                            'request_user_type': type(request.user).__name__,
+                            'session_key': request.session.session_key
+                        }, 'A')
+                        # #endregion
+                        messages.error(request, 'Account created successfully, but automatic login failed. Please log in manually with your credentials.')
+                        return redirect('accounts:login')
+                    
+                    # Login successful - session is automatically saved by SessionMiddleware
+                    logger.info(f'User successfully logged in: {user.email} (ID: {user.id})')
+                    messages.success(request, 'Registration successful! Welcome to HelpMe Hub.')
+                    
+                    # #region agent log
+                    debug_log('register_view:107', 'Before redirect to pending', {
+                        'redirect_target': 'accounts:pending',
+                        'final_user_id': request.user.id,
+                        'final_authenticated': request.user.is_authenticated,
+                        'session_key': request.session.session_key
+                    }, 'D')
+                    # #endregion
+                    
+                    # Redirect to pending page since new users don't have membership yet
+                    # SessionMiddleware will save the session when the redirect response is sent
+                    return redirect('accounts:pending')
+                        
+                except Exception as e:
+                    logger.error(f'Login exception for user {user.email}: {str(e)}', exc_info=True)
+                    import traceback
+                    logger.error(f'Traceback: {traceback.format_exc()}')
+                    # #region agent log
+                    debug_log('register_view:132', 'Login exception caught', {
+                        'exception_type': type(e).__name__,
+                        'exception_message': str(e),
+                        'user_id': user.id,
+                        'traceback': traceback.format_exc()[:500]
+                    }, 'C')
+                    # #endregion
+                    # User account was created, so inform them to log in manually
+                    messages.error(request, f'Account created successfully, but an error occurred during login: {str(e)}. Please log in manually.')
+                    return redirect('accounts:login')
+                    
+            except Exception as e:
+                logger.error(f'Registration error: {str(e)}', exc_info=True)
+                messages.error(request, f'An error occurred during registration: {str(e)}. Please try again.')
+                # Re-render form with errors
+                return render(request, 'accounts/register.html', {'form': form})
+        else:
+            # Form validation failed - display errors on registration page
+            logger.warning(f'Registration form validation failed: {form.errors}')
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = UserRegistrationForm()
+    
+    return render(request, 'accounts/register.html', {'form': form})
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def pending_view(request):
+    """
+    Pending approval page.
+    Shows join request status and form to request join.
+    Now accessible to users with existing memberships who want to join additional organizations.
+    """
+    # Debug logging helper (reuse from register_view)
+    import json
+    import os
+    import logging
+    from datetime import datetime
+    logger = logging.getLogger(__name__)
+    
+    def debug_log(location, message, data, hypothesis_id):
+        log_path = '/Users/islamelsayed/Documents/Help Me /.cursor/debug.log'
+        try:
+            log_entry = {
+                "timestamp": int(datetime.now().timestamp() * 1000),
+                "location": location,
+                "message": message,
+                "data": data,
+                "sessionId": "debug-session",
+                "runId": "registration-debug",
+                "hypothesisId": hypothesis_id
+            }
+            with open(log_path, 'a') as f:
+                f.write(json.dumps(log_entry) + '\n')
+        except Exception as e:
+            logger.error(f'Failed to write debug log: {e}')
+    
+    # #region agent log
+    debug_log('pending_view:222', 'pending_view entry', {
+        'user_is_authenticated': request.user.is_authenticated,
+        'user_id': request.user.id if hasattr(request.user, 'id') and request.user.is_authenticated else None,
+        'user_email': request.user.email if hasattr(request.user, 'email') and request.user.is_authenticated else None,
+        'session_key': request.session.session_key,
+        'session_exists': bool(request.session.session_key)
+    }, 'D')
+    # #endregion
+    
+    user = request.user
+    
+    # #region agent log
+    debug_log('pending_view:241', 'After assigning request.user', {
+        'user_id': user.id if hasattr(user, 'id') else None,
+        'user_type': type(user).__name__,
+        'user_is_authenticated': user.is_authenticated
+    }, 'E')
+    # #endregion
+    
+    # Get user's pending join requests (all of them)
+    pending_requests = JoinRequest.objects.filter(user=user, status='pending').select_related('school_group')
+    
+    # Get all memberships to show status
+    memberships = SchoolGroupMembership.objects.filter(user=user).select_related('school_group').order_by('-created_at')
+    
+    # Check if user can create an organization
+    can_create_organization = not user.has_created_organization()
+    
+    # Show form if user doesn't have accepted membership, or always show for joining additional orgs
+    show_join_form = True
+    
+    context = {
+        'user': user,
+        'pending_requests': pending_requests,
+        'pending_request': pending_requests.first(),  # For backward compatibility
+        'memberships': memberships,
+        'form': JoinRequestForm(user=user) if show_join_form else None,
+        'can_create_organization': can_create_organization,
+        'has_accepted_membership': has_accepted_membership(user),
+    }
+    
+    # #region agent log
+    debug_log('pending_view:265', 'Before render', {
+        'context_user_id': context['user'].id if hasattr(context['user'], 'id') else None,
+        'pending_requests_count': pending_requests.count(),
+        'memberships_count': memberships.count()
+    }, 'E')
+    # #endregion
+    
+    return render(request, 'accounts/pending.html', context)
+
+
+@login_required
+@require_http_methods(['POST'])
+def request_join_view(request):
+    """
+    Handle join request creation using access code.
+    Creates JoinRequest and SchoolGroupMembership (status='pending').
+    Allows users with existing memberships to join additional organizations.
+    """
+    user = request.user
+    
+    form = JoinRequestForm(request.POST, user=user)
+    
+    if form.is_valid():
+        # Get school_group from form's cleaned_data (set during validation)
+        school_group = form.cleaned_data.get('school_group')
+        
+        if not school_group:
+            messages.error(request, 'Invalid access code.')
+            # Redirect to referring page or appropriate default
+            next_url = request.GET.get('next') or request.META.get('HTTP_REFERER')
+            if next_url and next_url.startswith(request.build_absolute_uri('/')):
+                return redirect(next_url)
+            elif has_accepted_membership(user):
+                return redirect('accounts:dashboard')
+            else:
+                return redirect('accounts:pending')
+        
+        # Check if request already exists (double-check)
+        if JoinRequest.objects.filter(
+            user=user,
+            school_group=school_group,
+            status='pending'
+        ).exists():
+            messages.warning(request, 'You already have a pending request for this organization.')
+            next_url = request.GET.get('next') or request.META.get('HTTP_REFERER')
+            if next_url and next_url.startswith(request.build_absolute_uri('/')):
+                return redirect(next_url)
+            elif has_accepted_membership(user):
+                return redirect('accounts:dashboard')
+            else:
+                return redirect('accounts:pending')
+        
+        # Check if membership already exists
+        if SchoolGroupMembership.objects.filter(
+            user=user,
+            school_group=school_group
+        ).exists():
+            messages.warning(request, 'You already have a membership for this organization.')
+            next_url = request.GET.get('next') or request.META.get('HTTP_REFERER')
+            if next_url and next_url.startswith(request.build_absolute_uri('/')):
+                return redirect(next_url)
+            elif has_accepted_membership(user):
+                return redirect('accounts:dashboard')
+            else:
+                return redirect('accounts:pending')
+        
+        # Create join request
+        join_request = JoinRequest.objects.create(
+            user=user,
+            school_group=school_group,
+            status='pending'
+        )
+        
+        # Log audit action
+        from audit.utils import log_join_request_created
+        log_join_request_created(user, join_request)
+        
+        # Create membership with pending status
+        SchoolGroupMembership.objects.create(
+            user=user,
+            school_group=school_group,
+            status='pending'
+        )
+        
+        messages.success(
+            request,
+            f'Your request to join {school_group.name} has been submitted. '
+            'An administrator will review your request shortly.'
+        )
+        
+        # Smart redirect based on context
+        next_url = request.GET.get('next') or request.META.get('HTTP_REFERER')
+        if next_url and next_url.startswith(request.build_absolute_uri('/')):
+            return redirect(next_url)
+        elif has_accepted_membership(user):
+            return redirect('accounts:dashboard')
+        else:
+            return redirect('accounts:pending')
+    else:
+        # Form errors will be displayed in template
+        messages.error(request, 'Please correct the errors below.')
+        next_url = request.GET.get('next') or request.META.get('HTTP_REFERER')
+        if next_url and next_url.startswith(request.build_absolute_uri('/')):
+            return redirect(next_url)
+        elif has_accepted_membership(user):
+            return redirect('accounts:dashboard')
+        else:
+            return redirect('accounts:pending')
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def create_organization_view(request):
+    """
+    Handle organization creation.
+    Creates SchoolGroup and makes user admin with accepted membership.
+    """
+    user = request.user
+    
+    # Check if user has already created an organization
+    if user.has_created_organization():
+        messages.warning(request, 'You have already created an organization. Each user can only create one organization.')
+        return redirect('accounts:pending')
+    
+    if request.method == 'POST':
+        form = CreateOrganizationForm(request.POST, user=user)
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            description = form.cleaned_data.get('description', '')
+            
+            # Create the organization
+            organization = SchoolGroup.objects.create(
+                name=name,
+                description=description,
+                created_by=user,
+                is_active=True,
+                plan='free',
+                admin_limit=1,
+                ai_enabled=False,
+                ai_plan='limited'
+            )
+            
+            # Generate access code for the new organization
+            try:
+                organization.generate_access_code()
+            except Exception as e:
+                # Log error but don't fail organization creation
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f'Failed to generate access code for organization {organization.id}: {e}')
+            
+            # Create membership with accepted status
+            membership = SchoolGroupMembership.objects.create(
+                user=user,
+                school_group=organization,
+                status='accepted',
+                joined_at=timezone.now()
+            )
+            
+            # Set user role to admin if currently user
+            if user.role == 'user':
+                user.role = 'admin'
+                user.save()
+            
+            # Set current organization
+            user.current_organization = organization
+            user.save()
+            
+            messages.success(
+                request,
+                f'Organization "{organization.name}" has been created successfully! '
+                'You are now the administrator of this organization.'
+            )
+            return redirect('accounts:dashboard')
+    else:
+        form = CreateOrganizationForm(user=user)
+    
+    context = {
+        'form': form,
+    }
+    
+    return render(request, 'accounts/create_organization.html', context)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def join_organization_view(request):
+    """
+    Dedicated page for joining an organization using an access code.
+    Works for users with or without existing memberships.
+    """
+    user = request.user
+    
+    if request.method == 'POST':
+        form = JoinRequestForm(request.POST, user=user)
+        if form.is_valid():
+            # Form validation and join request creation handled in request_join_view
+            # This view just renders the form, actual submission goes to request_join_view
+            pass
+    else:
+        form = JoinRequestForm(user=user)
+    
+    # Get user's current organizations and pending requests
+    user_organizations = get_user_organizations(user)
+    pending_requests = JoinRequest.objects.filter(user=user, status='pending').select_related('school_group')
+    memberships = SchoolGroupMembership.objects.filter(user=user).select_related('school_group').order_by('-created_at')
+    
+    context = {
+        'form': form,
+        'user_organizations': user_organizations,
+        'pending_requests': pending_requests,
+        'memberships': memberships,
+        'has_accepted_membership': has_accepted_membership(user),
+    }
+    
+    return render(request, 'accounts/join_organization.html', context)
+
+
+@login_required
+@require_http_methods(['POST'])
+def switch_organization_view(request):
+    """
+    Handle organization switching.
+    Updates user's current_organization field.
+    """
+    user = request.user
+    
+    organization_id = request.POST.get('organization_id')
+    if not organization_id:
+        messages.error(request, 'Please select an organization.')
+        return redirect('accounts:profile')
+    
+    try:
+        organization = SchoolGroup.objects.get(id=organization_id)
+    except SchoolGroup.DoesNotExist:
+        messages.error(request, 'Organization not found.')
+        return redirect('accounts:profile')
+    
+    # Verify user is a member of this organization
+    membership = SchoolGroupMembership.objects.filter(
+        user=user,
+        school_group=organization,
+        status='accepted'
+    ).first()
+    
+    if not membership:
+        messages.error(request, 'You are not a member of this organization.')
+        return redirect('accounts:profile')
+    
+    # Update current organization
+    user.current_organization = organization
+    user.save(update_fields=['current_organization'])
+    
+    messages.success(request, f'Switched to {organization.name}.')
+    return redirect('accounts:dashboard')
+
+
+@login_required
+def dashboard_view(request):
+    """Dashboard view - redirects based on user role."""
+    user = request.user
+    
+    # Check if user has accepted membership, if not redirect to pending
+    if not has_accepted_membership(user):
+        return redirect('accounts:pending')
+    
+    # Get user's organizations and pending requests for context
+    user_organizations = get_user_organizations(user)
+    pending_requests = JoinRequest.objects.filter(user=user, status='pending').select_related('school_group')
+    user_org = get_user_school_group(user)
+    
+    # Import models for statistics
+    from chats.models import Chat
+    from tickets.models import Ticket
+    
+    # Calculate user statistics (filtered by current organization)
+    stats = {
+        'total_chats': Chat.objects.filter(user=user, school_group=user_org).count(),
+        'active_chats': Chat.objects.filter(user=user, school_group=user_org, status='active').count(),
+        'resolved_chats': Chat.objects.filter(user=user, school_group=user_org, status='resolved').count(),
+        'total_tickets': Ticket.objects.filter(user=user, school_group=user_org).count(),
+        'open_tickets': Ticket.objects.filter(user=user, school_group=user_org, status='open').count(),
+        'in_progress_tickets': Ticket.objects.filter(user=user, school_group=user_org, status='in_progress').count(),
+        'resolved_tickets': Ticket.objects.filter(user=user, school_group=user_org, status='resolved').count(),
+    }
+    
+    # Get recent activity (last 5 chats and tickets)
+    recent_chats = Chat.objects.filter(user=user, school_group=user_org).select_related('assigned_to').order_by('-updated_at')[:5]
+    recent_tickets = Ticket.objects.filter(user=user, school_group=user_org).select_related('assigned_to').order_by('-updated_at')[:5]
+    
+    context = {
+        'user': user,
+        'user_organizations': user_organizations,
+        'pending_requests': pending_requests,
+        'join_form': JoinRequestForm(user=user),
+        'stats': stats,
+        'recent_chats': recent_chats,
+        'recent_tickets': recent_tickets,
+        'user_org': user_org,
+    }
+    
+    if user.is_superadmin():
+        return redirect('accounts:superadmin_dashboard')
+    elif user.is_admin():
+        return redirect('accounts:admin_dashboard')
+    else:
+        return render(request, 'dashboard.html', context)
+
+
+@login_required
+@role_required(['admin', 'superadmin'])
+def admin_dashboard_view(request):
+    """Admin dashboard view."""
+    user = request.user
+    user_organizations = get_user_organizations(user)
+    pending_requests = JoinRequest.objects.filter(user=user, status='pending').select_related('school_group')
+    
+    context = {
+        'user': user,
+        'user_organizations': user_organizations,
+        'pending_requests': pending_requests,
+        'join_form': JoinRequestForm(user=user),
+    }
+    return render(request, 'dashboard.html', context)
+
+
+@login_required
+@role_required(['superadmin'])
+def superadmin_dashboard_view(request):
+    """Superadmin dashboard view with system-wide statistics."""
+    from chats.models import Chat
+    from tickets.models import Ticket
+    from knowledge.models import Article
+    from audit.models import AuditLog
+    
+    user = request.user
+    
+    # System-wide statistics
+    stats = {
+        'total_users': User.objects.count(),
+        'total_admins': User.objects.filter(role__in=['admin', 'superadmin']).count(),
+        'total_superadmins': User.objects.filter(role='superadmin').count(),
+        'total_school_groups': SchoolGroup.objects.count(),
+        'active_school_groups': SchoolGroup.objects.filter(is_active=True).count(),
+        'total_chats': Chat.objects.count(),
+        'active_chats': Chat.objects.filter(status='active').count(),
+        'total_tickets': Ticket.objects.count(),
+        'open_tickets': Ticket.objects.filter(status__in=['open', 'in_progress']).count(),
+        'total_articles': Article.objects.count(),
+        'published_articles': Article.objects.filter(status='published').count(),
+        'total_audit_logs': AuditLog.objects.count(),
+        'pending_join_requests': JoinRequest.objects.filter(status='pending').count(),
+    }
+    
+    # Recent activity (last 10 audit logs)
+    recent_activity = AuditLog.objects.select_related('actor', 'school_group').order_by('-created_at')[:10]
+    
+    # School groups with member counts
+    school_groups = SchoolGroup.objects.annotate(
+        member_count=models.Count('memberships', filter=models.Q(memberships__status='accepted'))
+    ).order_by('-created_at')[:10]
+    
+    context = {
+        'user': user,
+        'stats': stats,
+        'recent_activity': recent_activity,
+        'school_groups': school_groups,
+    }
+    return render(request, 'accounts/superadmin/dashboard.html', context)
+
+
+@login_required
+def profile_view(request):
+    """User profile view."""
+    user = request.user
+    
+    # Check if user has accepted membership, if not redirect to pending
+    if not has_accepted_membership(user):
+        return redirect('accounts:pending')
+    school_group = get_user_school_group(user)
+    memberships = SchoolGroupMembership.objects.filter(user=user).select_related('school_group')
+    user_organizations = get_user_organizations(user)
+    
+    # Get pending requests
+    pending_requests = JoinRequest.objects.filter(user=user, status='pending').select_related('school_group')
+    
+    context = {
+        'user': user,
+        'school_group': school_group,
+        'memberships': memberships,
+        'user_organizations': user_organizations,
+        'pending_requests': pending_requests,
+        'join_form': JoinRequestForm(user=user),
+    }
+    return render(request, 'accounts/profile.html', context)
+
+
+@login_required
+@membership_required
+def subscription_view(request):
+    """
+    Subscription management page for organization.
+    Shows current plan, pricing comparison, and upgrade options.
+    Accessible to all authenticated users with accepted membership.
+    """
+    # Get user's organization from membership
+    organization = get_user_school_group(request.user)
+    if not organization:
+        messages.error(request, 'You must be a member of an organization to view subscription details.')
+        return redirect('accounts:pending')
+    
+    # Get current admin count
+    admin_count = organization.get_admin_count()
+    
+    # Prepare pricing comparison data
+    pricing_data = {
+        'free': {
+            'price': '$0',
+            'admin_limit': '1',
+            'users': 'Up to 25',
+            'chat_support': True,
+            'ticketing': True,
+            'knowledge_base': False,
+            'analytics': False,
+            'ai': 'Limited',
+            'sla': False,
+            'audit_logs': False,
+        },
+        'pro': {
+            'price': '$59/month',
+            'price_yearly': '$599/year',
+            'admin_limit': '10',
+            'users': 'Unlimited',
+            'chat_support': True,
+            'ticketing': True,
+            'knowledge_base': True,
+            'analytics': 'Basic',
+            'ai': 'Limited',
+            'sla': False,
+            'audit_logs': False,
+        },
+        'enterprise': {
+            'price': 'Custom pricing',
+            'admin_limit': 'Custom',
+            'users': 'Unlimited',
+            'chat_support': True,
+            'ticketing': True,
+            'knowledge_base': True,
+            'analytics': 'Advanced',
+            'ai': 'Unlimited*',
+            'sla': True,
+            'audit_logs': True,
+        }
+    }
+    
+    # Check if user is admin (for showing action buttons)
+    is_admin = request.user.is_admin()
+    
+    # Determine AI status for AI Add-On section
+    ai_status = organization.get_ai_status()
+    ai_price = '$7/month' if organization.ai_enabled else '$0 (included)'
+    
+    context = {
+        'organization': organization,
+        'admin_count': admin_count,
+        'pricing_data': pricing_data,
+        'can_upgrade': organization.plan == 'free' and is_admin,
+        'can_enable_ai': not organization.ai_enabled and is_admin,
+        'is_admin': is_admin,
+        # AI Add-On context
+        'ai_enabled': organization.ai_enabled,
+        'ai_plan': organization.ai_plan,
+        'ai_status': ai_status,
+        'ai_price': ai_price,
+        'can_enable': not organization.ai_enabled and is_admin,
+        'can_disable': organization.ai_enabled and is_admin,
+    }
+    
+    return render(request, 'accounts/subscription.html', context)
+
+
+@login_required
+def ai_addon_view(request):
+    """
+    AI Add-On/Plan management page.
+    Redirects to subscription page where AI Add-On is now integrated.
+    """
+    # Redirect to subscription page where AI Add-On section is now located
+    return redirect('accounts:subscription')
+
+
+@login_required
+@role_required(['admin', 'superadmin'])
+@require_http_methods(['POST'])
+def upgrade_plan_view(request):
+    """
+    Handle plan upgrade request.
+    Creates Stripe Checkout Session and redirects to Stripe.
+    """
+    organization = get_user_school_group(request.user)
+    if not organization:
+        messages.error(request, 'You must be a member of an organization to upgrade plans.')
+        return redirect('accounts:pending')
+    
+    plan_type = request.POST.get('plan_type', '').strip()
+    if plan_type not in ['pro', 'enterprise']:
+        messages.error(request, 'Invalid plan type selected.')
+        return redirect('accounts:subscription')
+    
+    try:
+        from .stripe_service import create_checkout_session
+        session = create_checkout_session(organization, plan_type, request)
+        return redirect(session.url)
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('accounts:subscription')
+    except Exception as e:
+        logger.error(f'Error creating Stripe checkout session: {str(e)}')
+        messages.error(request, 'An error occurred while processing your request. Please try again later.')
+        return redirect('accounts:subscription')
+
+
+@login_required
+@role_required(['admin', 'superadmin'])
+@require_http_methods(['POST'])
+def toggle_ai_addon_view(request):
+    """
+    Handle AI Add-On enable/disable request.
+    Creates or cancels Stripe subscription for AI Add-On.
+    """
+    organization = get_user_school_group(request.user)
+    if not organization:
+        messages.error(request, 'You must be a member of an organization to manage AI Add-On.')
+        return redirect('accounts:pending')
+    
+    action = request.POST.get('action', '').strip()
+    
+    try:
+        from .stripe_service import create_ai_addon_subscription, cancel_ai_addon_subscription
+        
+        if action == 'enable':
+            # Create Stripe subscription
+            subscription = create_ai_addon_subscription(organization, request)
+            organization.stripe_subscription_id = subscription.id
+            organization.ai_enabled = True
+            organization.ai_plan = 'unlimited'
+            organization.subscription_status = subscription.status
+            organization.save()
+            
+            # Log audit action
+            from audit.utils import log_action
+            log_action(
+                request.user,
+                'settings_changed',
+                organization,
+                f'AI Add-On enabled for {organization.name}',
+                organization
+            )
+            
+            messages.success(request, 'AI Add-On enabled successfully. You will be billed $7/month.')
+        elif action == 'disable':
+            # Cancel subscription
+            cancel_ai_addon_subscription(organization)
+            organization.ai_enabled = False
+            organization.ai_plan = 'limited'
+            organization.save()
+            
+            # Log audit action
+            from audit.utils import log_action
+            log_action(
+                request.user,
+                'settings_changed',
+                organization,
+                f'AI Add-On disabled for {organization.name}',
+                organization
+            )
+            
+            messages.info(request, 'AI Add-On will be disabled at the end of the current billing period.')
+        else:
+            messages.error(request, 'Invalid action.')
+        
+    except ValueError as e:
+        messages.error(request, str(e))
+    except Exception as e:
+        logger.error(f'Error managing AI Add-On: {str(e)}')
+        messages.error(request, 'An error occurred while processing your request. Please try again later.')
+    
+    return redirect('accounts:subscription')
+
+
+@login_required
+def stripe_checkout_success_view(request):
+    """Handle successful Stripe checkout."""
+    session_id = request.GET.get('session_id')
+    
+    if not session_id:
+        messages.error(request, 'Invalid checkout session.')
+        return redirect('accounts:subscription')
+    
+    try:
+        import stripe
+        from django.conf import settings
+        
+        if not settings.STRIPE_SECRET_KEY:
+            messages.error(request, 'Payment processing is not configured.')
+            return redirect('accounts:subscription')
+        
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        school_group_id = session.metadata.get('school_group_id')
+        if school_group_id:
+            organization = get_object_or_404(SchoolGroup, id=school_group_id)
+            
+            # Verify user has access to this organization
+            if not request.user.is_superadmin():
+                user_org = get_user_school_group(request.user)
+                if user_org != organization:
+                    messages.error(request, 'You do not have permission to access this organization.')
+                    return redirect('accounts:subscription')
+            
+            # Update organization with subscription info
+            organization.stripe_customer_id = session.customer
+            if session.subscription:
+                organization.stripe_subscription_id = session.subscription
+            organization.subscription_status = 'active'
+            organization.save()
+            
+            # Log audit action
+            from audit.utils import log_action
+            log_action(
+                request.user,
+                'settings_changed',
+                organization,
+                f'Plan upgraded to {organization.plan} for {organization.name}',
+                organization
+            )
+            
+            messages.success(request, f'Plan upgraded successfully! Your organization is now on the {organization.get_plan_display()} plan.')
+        else:
+            messages.error(request, 'Invalid checkout session metadata.')
+    except Exception as e:
+        logger.error(f'Error processing checkout success: {str(e)}')
+        messages.error(request, 'An error occurred while processing your payment. Please contact support.')
+    
+    return redirect('accounts:subscription')
+
+
+@login_required
+def stripe_checkout_cancel_view(request):
+    """Handle canceled Stripe checkout."""
+    messages.info(request, 'Checkout was canceled. No charges were made.')
+    return redirect('accounts:subscription')
+
+
+@require_http_methods(['POST'])
+def stripe_webhook_view(request):
+    """Handle Stripe webhook events."""
+    from django.conf import settings
+    from django.http import HttpResponse
+    import stripe
+    
+    if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_WEBHOOK_SECRET:
+        return HttpResponse('Webhook not configured', status=400)
+    
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError:
+        logger.error('Invalid payload in Stripe webhook')
+        return HttpResponse('Invalid payload', status=400)
+    except stripe.error.SignatureVerificationError:
+        logger.error('Invalid signature in Stripe webhook')
+        return HttpResponse('Invalid signature', status=400)
+    
+    # Handle the event
+    from .stripe_service import handle_webhook_event
+    if handle_webhook_event(event):
+        return HttpResponse(status=200)
+    else:
+        return HttpResponse('Error processing webhook', status=500)
+
