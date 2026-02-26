@@ -19,9 +19,10 @@ Set these environment variables in your Railway project dashboard:
 # Django Settings
 SECRET_KEY=your-super-secret-production-key-here
 DEBUG=False
-ALLOWED_HOSTS=your-app.railway.app,yourdomain.com
+# Include your Railway host (e.g. yourapp.up.railway.app) and/or *.railway.app
+ALLOWED_HOSTS=your-app.up.railway.app,*.railway.app,yourdomain.com
 
-# Database (Railway automatically provides this)
+# Database (Railway sets DATABASE_URL when you add a Postgres service)
 DATABASE_URL=postgresql://postgres:password@host:port/railway
 ```
 
@@ -172,14 +173,17 @@ MEDIA_URL=/media/
 
 ## Step 2: Railway Deployment
 
-1. **Connect your GitHub repository** to Railway
-2. **Create a PostgreSQL service** in Railway
-3. **Create a Web Service** and link it to your database
-4. **Set all environment variables** in Railway dashboard
-5. **Configure build settings:**
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `gunicorn helpme_hub.wsgi:application --bind 0.0.0.0:$PORT`
-6. **Deploy!** Railway will automatically deploy on git push
+1. **Connect your GitHub repository** to Railway.
+2. **Set the Root Directory** (critical):
+   - In your Railway **Web Service** → **Settings** → **General**, set **Root Directory** to `helpme_hub`.
+   - This makes Railway run build and start commands from the Django project folder (where `manage.py`, `requirements.txt`, and `Procfile` live).
+3. **Create a PostgreSQL service** in Railway and link it to your Web Service (Railway will set `DATABASE_URL` automatically).
+4. **Set environment variables** in Railway (see Step 1). Required for production:
+   - `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS=your-app.up.railway.app,*.railway.app` (replace with your actual Railway host).
+5. **Build and start:** If Root Directory is `helpme_hub`, Railway will use `helpme_hub/Procfile` and `helpme_hub/requirements.txt`. No need to set custom Build/Start commands unless you want to run migrations or collectstatic in the build:
+   - Optional build command: `pip install -r requirements.txt && python manage.py collectstatic --noinput`
+   - Start is handled by the Procfile: `gunicorn helpme_hub.wsgi:application --bind 0.0.0.0:$PORT`
+6. **Deploy!** Railway will automatically deploy on git push.
 
 ## Step 3: Post-Deployment Setup
 
