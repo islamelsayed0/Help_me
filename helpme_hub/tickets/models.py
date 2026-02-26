@@ -148,3 +148,35 @@ class Ticket(models.Model):
             if resolution_notes and not self.resolution_notes:
                 self.resolution_notes = resolution_notes
             self.save(update_fields=['status', 'closed_at', 'resolution_notes', 'updated_at'])
+
+
+class TicketComment(models.Model):
+    """
+    Comment/update on a ticket. Users and admins can add comments.
+    """
+    ticket = models.ForeignKey(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        help_text='Ticket this comment belongs to'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ticket_comments',
+        help_text='User who wrote the comment'
+    )
+    body = models.TextField(help_text='Comment text')
+    is_internal = models.BooleanField(
+        default=False,
+        help_text='Internal note (visible only to admins)'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Ticket comment'
+        verbose_name_plural = 'Ticket comments'
+
+    def __str__(self):
+        return f'Comment by {self.author.email} on Ticket #{self.ticket_id}'

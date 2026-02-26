@@ -4,7 +4,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.cache import never_cache
 from django.db import models
+from django.conf import settings
 import logging
 from .decorators import role_required, membership_required
 from .forms import UserRegistrationForm, JoinRequestForm, CreateOrganizationForm
@@ -38,6 +40,7 @@ def loading_view(request):
     return render(request, 'loading.html')
 
 
+@never_cache
 @csrf_protect
 @require_http_methods(['GET', 'POST'])
 def login_view(request):
@@ -484,8 +487,8 @@ def create_organization_view(request):
                 created_by=user,
                 is_active=True,
                 plan='free',
-                admin_limit=1,
-                ai_enabled=False,
+                admin_limit=10,
+                ai_enabled=True,
                 ai_plan='limited'
             )
             
@@ -659,16 +662,77 @@ def dashboard_view(request):
 @login_required
 @role_required(['admin', 'superadmin'])
 def admin_dashboard_view(request):
-    """Admin dashboard view."""
+    """Admin dashboard view with org-level stats and recent activity."""
     user = request.user
     user_organizations = get_user_organizations(user)
     pending_requests = JoinRequest.objects.filter(user=user, status='pending').select_related('school_group')
+    user_org = get_user_school_group(user)
+    
+    from chats.models import Chat
+    from tickets.models import Ticket
+    from inventory.models import InventoryItem
+    
+    # Org-level stats (admin sees their organization's activity)
+    if user_org:
+        stats = {
+            'total_chats': Chat.objects.filter(school_group=user_org).count(),
+            'active_chats': Chat.objects.filter(school_group=user_org, status='active').count(),
+            'resolved_chats': Chat.objects.filter(school_group=user_org, status='resolved').count(),
+            'total_tickets': Ticket.objects.filter(school_group=user_org).count(),
+            'open_tickets': Ticket.objects.filter(school_group=user_org, status='open').count(),
+            'in_progress_tickets': Ticket.objects.filter(school_group=user_org, status='in_progress').count(),
+            'resolved_tickets': Ticket.objects.filter(school_group=user_org, status='resolved').count(),
+        }
+
+        # Simple analytics cards
+        # 1) Open tickets (open + in_progress)
+        open_tickets_count = Ticket.objects.filter(
+            school_group=user_org,
+            status__in=['open', 'in_progress'],
+        ).count()
+
+        # 2) Low-stock inventory items
+        from django.db.models import F
+        low_stock_count = InventoryItem.objects.filter(
+            school_group=user_org,
+            min_stock__gt=0,
+            quantity__lte=F('min_stock'),
+        ).count()
+
+        # 3) Active users in last 7 days (based on ticket creation)
+        from django.utils import timezone
+        from datetime import timedelta
+        since = timezone.now() - timedelta(days=7)
+        active_users_last_7_days = Ticket.objects.filter(
+            school_group=user_org,
+            created_at__gte=since,
+        ).values('user').distinct().count()
+
+        recent_chats = Chat.objects.filter(school_group=user_org).select_related('assigned_to').order_by('-updated_at')[:5]
+        recent_tickets = Ticket.objects.filter(school_group=user_org).select_related('assigned_to').order_by('-updated_at')[:5]
+    else:
+        stats = {
+            'total_chats': 0, 'active_chats': 0, 'resolved_chats': 0,
+            'total_tickets': 0, 'open_tickets': 0, 'in_progress_tickets': 0, 'resolved_tickets': 0,
+        }
+        open_tickets_count = 0
+        low_stock_count = 0
+        active_users_last_7_days = 0
+        recent_chats = []
+        recent_tickets = []
     
     context = {
         'user': user,
         'user_organizations': user_organizations,
         'pending_requests': pending_requests,
         'join_form': JoinRequestForm(user=user),
+        'stats': stats,
+        'recent_chats': recent_chats,
+        'recent_tickets': recent_tickets,
+        'user_org': user_org,
+        'open_tickets_count': open_tickets_count,
+        'low_stock_count': low_stock_count,
+        'active_users_last_7_days': active_users_last_7_days,
     }
     return render(request, 'dashboard.html', context)
 
@@ -744,292 +808,27 @@ def profile_view(request):
     return render(request, 'accounts/profile.html', context)
 
 
+@never_cache
 @login_required
 @membership_required
 def subscription_view(request):
     """
-    Subscription management page for organization.
-    Shows current plan, pricing comparison, and upgrade options.
-    Accessible to all authenticated users with accepted membership.
+    Support / Donate page. HelpMe Hub is free; donations help cover costs.
     """
-    # Get user's organization from membership
     organization = get_user_school_group(request.user)
     if not organization:
-        messages.error(request, 'You must be a member of an organization to view subscription details.')
+        messages.error(request, 'You must be a member of an organization to view this page.')
         return redirect('accounts:pending')
-    
-    # Get current admin count
+
     admin_count = organization.get_admin_count()
-    
-    # Prepare pricing comparison data
-    pricing_data = {
-        'free': {
-            'price': '$0',
-            'admin_limit': '1',
-            'users': 'Up to 25',
-            'chat_support': True,
-            'ticketing': True,
-            'knowledge_base': False,
-            'analytics': False,
-            'ai': 'Limited',
-            'sla': False,
-            'audit_logs': False,
-        },
-        'pro': {
-            'price': '$59/month',
-            'price_yearly': '$599/year',
-            'admin_limit': '10',
-            'users': 'Unlimited',
-            'chat_support': True,
-            'ticketing': True,
-            'knowledge_base': True,
-            'analytics': 'Basic',
-            'ai': 'Limited',
-            'sla': False,
-            'audit_logs': False,
-        },
-        'enterprise': {
-            'price': 'Custom pricing',
-            'admin_limit': 'Custom',
-            'users': 'Unlimited',
-            'chat_support': True,
-            'ticketing': True,
-            'knowledge_base': True,
-            'analytics': 'Advanced',
-            'ai': 'Unlimited*',
-            'sla': True,
-            'audit_logs': True,
-        }
-    }
-    
-    # Check if user is admin (for showing action buttons)
+    donation_url = (getattr(settings, 'DONATION_URL', None) or '').strip()
     is_admin = request.user.is_admin()
-    
-    # Determine AI status for AI Add-On section
-    ai_status = organization.get_ai_status()
-    ai_price = '$7/month' if organization.ai_enabled else '$0 (included)'
-    
+
     context = {
         'organization': organization,
         'admin_count': admin_count,
-        'pricing_data': pricing_data,
-        'can_upgrade': organization.plan == 'free' and is_admin,
-        'can_enable_ai': not organization.ai_enabled and is_admin,
+        'donation_url': donation_url if donation_url else None,
         'is_admin': is_admin,
-        # AI Add-On context
-        'ai_enabled': organization.ai_enabled,
-        'ai_plan': organization.ai_plan,
-        'ai_status': ai_status,
-        'ai_price': ai_price,
-        'can_enable': not organization.ai_enabled and is_admin,
-        'can_disable': organization.ai_enabled and is_admin,
     }
-    
     return render(request, 'accounts/subscription.html', context)
-
-
-@login_required
-def ai_addon_view(request):
-    """
-    AI Add-On/Plan management page.
-    Redirects to subscription page where AI Add-On is now integrated.
-    """
-    # Redirect to subscription page where AI Add-On section is now located
-    return redirect('accounts:subscription')
-
-
-@login_required
-@role_required(['admin', 'superadmin'])
-@require_http_methods(['POST'])
-def upgrade_plan_view(request):
-    """
-    Handle plan upgrade request.
-    Creates Stripe Checkout Session and redirects to Stripe.
-    """
-    organization = get_user_school_group(request.user)
-    if not organization:
-        messages.error(request, 'You must be a member of an organization to upgrade plans.')
-        return redirect('accounts:pending')
-    
-    plan_type = request.POST.get('plan_type', '').strip()
-    if plan_type not in ['pro', 'enterprise']:
-        messages.error(request, 'Invalid plan type selected.')
-        return redirect('accounts:subscription')
-    
-    try:
-        from .stripe_service import create_checkout_session
-        session = create_checkout_session(organization, plan_type, request)
-        return redirect(session.url)
-    except ValueError as e:
-        messages.error(request, str(e))
-        return redirect('accounts:subscription')
-    except Exception as e:
-        logger.error(f'Error creating Stripe checkout session: {str(e)}')
-        messages.error(request, 'An error occurred while processing your request. Please try again later.')
-        return redirect('accounts:subscription')
-
-
-@login_required
-@role_required(['admin', 'superadmin'])
-@require_http_methods(['POST'])
-def toggle_ai_addon_view(request):
-    """
-    Handle AI Add-On enable/disable request.
-    Creates or cancels Stripe subscription for AI Add-On.
-    """
-    organization = get_user_school_group(request.user)
-    if not organization:
-        messages.error(request, 'You must be a member of an organization to manage AI Add-On.')
-        return redirect('accounts:pending')
-    
-    action = request.POST.get('action', '').strip()
-    
-    try:
-        from .stripe_service import create_ai_addon_subscription, cancel_ai_addon_subscription
-        
-        if action == 'enable':
-            # Create Stripe subscription
-            subscription = create_ai_addon_subscription(organization, request)
-            organization.stripe_subscription_id = subscription.id
-            organization.ai_enabled = True
-            organization.ai_plan = 'unlimited'
-            organization.subscription_status = subscription.status
-            organization.save()
-            
-            # Log audit action
-            from audit.utils import log_action
-            log_action(
-                request.user,
-                'settings_changed',
-                organization,
-                f'AI Add-On enabled for {organization.name}',
-                organization
-            )
-            
-            messages.success(request, 'AI Add-On enabled successfully. You will be billed $7/month.')
-        elif action == 'disable':
-            # Cancel subscription
-            cancel_ai_addon_subscription(organization)
-            organization.ai_enabled = False
-            organization.ai_plan = 'limited'
-            organization.save()
-            
-            # Log audit action
-            from audit.utils import log_action
-            log_action(
-                request.user,
-                'settings_changed',
-                organization,
-                f'AI Add-On disabled for {organization.name}',
-                organization
-            )
-            
-            messages.info(request, 'AI Add-On will be disabled at the end of the current billing period.')
-        else:
-            messages.error(request, 'Invalid action.')
-        
-    except ValueError as e:
-        messages.error(request, str(e))
-    except Exception as e:
-        logger.error(f'Error managing AI Add-On: {str(e)}')
-        messages.error(request, 'An error occurred while processing your request. Please try again later.')
-    
-    return redirect('accounts:subscription')
-
-
-@login_required
-def stripe_checkout_success_view(request):
-    """Handle successful Stripe checkout."""
-    session_id = request.GET.get('session_id')
-    
-    if not session_id:
-        messages.error(request, 'Invalid checkout session.')
-        return redirect('accounts:subscription')
-    
-    try:
-        import stripe
-        from django.conf import settings
-        
-        if not settings.STRIPE_SECRET_KEY:
-            messages.error(request, 'Payment processing is not configured.')
-            return redirect('accounts:subscription')
-        
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        session = stripe.checkout.Session.retrieve(session_id)
-        
-        school_group_id = session.metadata.get('school_group_id')
-        if school_group_id:
-            organization = get_object_or_404(SchoolGroup, id=school_group_id)
-            
-            # Verify user has access to this organization
-            if not request.user.is_superadmin():
-                user_org = get_user_school_group(request.user)
-                if user_org != organization:
-                    messages.error(request, 'You do not have permission to access this organization.')
-                    return redirect('accounts:subscription')
-            
-            # Update organization with subscription info
-            organization.stripe_customer_id = session.customer
-            if session.subscription:
-                organization.stripe_subscription_id = session.subscription
-            organization.subscription_status = 'active'
-            organization.save()
-            
-            # Log audit action
-            from audit.utils import log_action
-            log_action(
-                request.user,
-                'settings_changed',
-                organization,
-                f'Plan upgraded to {organization.plan} for {organization.name}',
-                organization
-            )
-            
-            messages.success(request, f'Plan upgraded successfully! Your organization is now on the {organization.get_plan_display()} plan.')
-        else:
-            messages.error(request, 'Invalid checkout session metadata.')
-    except Exception as e:
-        logger.error(f'Error processing checkout success: {str(e)}')
-        messages.error(request, 'An error occurred while processing your payment. Please contact support.')
-    
-    return redirect('accounts:subscription')
-
-
-@login_required
-def stripe_checkout_cancel_view(request):
-    """Handle canceled Stripe checkout."""
-    messages.info(request, 'Checkout was canceled. No charges were made.')
-    return redirect('accounts:subscription')
-
-
-@require_http_methods(['POST'])
-def stripe_webhook_view(request):
-    """Handle Stripe webhook events."""
-    from django.conf import settings
-    from django.http import HttpResponse
-    import stripe
-    
-    if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_WEBHOOK_SECRET:
-        return HttpResponse('Webhook not configured', status=400)
-    
-    payload = request.body
-    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
-    
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
-        )
-    except ValueError:
-        logger.error('Invalid payload in Stripe webhook')
-        return HttpResponse('Invalid payload', status=400)
-    except stripe.error.SignatureVerificationError:
-        logger.error('Invalid signature in Stripe webhook')
-        return HttpResponse('Invalid signature', status=400)
-    
-    # Handle the event
-    from .stripe_service import handle_webhook_event
-    if handle_webhook_event(event):
-        return HttpResponse(status=200)
-    else:
-        return HttpResponse('Error processing webhook', status=500)
 

@@ -17,6 +17,38 @@
                 <span class="text-text-primary-light dark:text-text-primary-dark text-xs sm:text-sm font-mono">{{ user.username|default:"Not set" }}</span>
             </div>
         </div>
+        {% if user.is_admin or user.is_superadmin %}
+        <!-- Admin analytics cards -->
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors">
+                <div class="text-xs font-medium text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider mb-1">Open tickets</div>
+                <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">
+                    {{ open_tickets_count|default:"0" }}
+                </div>
+                <a href="{% url 'tickets:admin_board' %}" class="mt-2 inline-block text-xs text-light-blue dark:text-calm-blue hover:underline">
+                    View ticket board →
+                </a>
+            </div>
+            <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors">
+                <div class="text-xs font-medium text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider mb-1">Low-stock items</div>
+                <div class="text-2xl font-bold {% if low_stock_count|default:0 %}text-warning-text-light dark:text-warning-text{% else %}text-text-primary-light dark:text-text-primary-dark{% endif %}">
+                    {{ low_stock_count|default:"0" }}
+                </div>
+                <a href="{% url 'inventory:admin_item_list' %}" class="mt-2 inline-block text-xs text-light-blue dark:text-calm-blue hover:underline">
+                    Manage inventory →
+                </a>
+            </div>
+            <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors">
+                <div class="text-xs font-medium text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider mb-1">Active users (7 days)</div>
+                <div class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">
+                    {{ active_users_last_7_days|default:"0" }}
+                </div>
+                <p class="mt-2 text-xs text-text-muted-light dark:text-text-muted-dark">
+                    Users who created tickets in the last 7 days.
+                </p>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Quick Actions -->
@@ -133,6 +165,7 @@
     {% endif %}
 
     <!-- Statistics Section -->
+    {% if stats %}
     <div class="mb-6 sm:mb-8">
         <h2 class="text-xl sm:text-2xl font-bold text-text-primary-light dark:text-text-primary-dark mb-3 sm:mb-4">Statistics</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -183,8 +216,10 @@
             </div>
         </div>
     </div>
+    {% endif %}
     
     <!-- Recent Activity Section -->
+    {% if stats %}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
         <!-- Recent Chats -->
         <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
@@ -269,6 +304,6 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
-

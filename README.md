@@ -178,7 +178,8 @@ See [LICENSE](LICENSE) for license information.
 - [Phase 0 Blueprint](PHASE_0_BLUEPRINT.md) - Complete project architecture
 - [Architecture & Design](ARCHITECTURE_DESIGN.md) - UI/UX and system design
 - [Development Guide](DEVELOPMENT.md) - Local setup and development
-- [Deployment Guide](DEPLOYMENT.md) - Production deployment
+- [Production Setup Guide](PRODUCTION_SETUP.md) - Production deployment
+- [Monitoring & Backups](MONITORING_AND_BACKUPS.md) - Error monitoring, performance tracking, and backups
 
 ## Support
 

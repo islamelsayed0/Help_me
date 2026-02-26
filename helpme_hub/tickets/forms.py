@@ -2,7 +2,7 @@
 Forms for ticket functionality.
 """
 from django import forms
-from .models import Ticket
+from .models import Ticket, TicketComment
 
 
 class CreateTicketForm(forms.Form):
@@ -90,6 +90,20 @@ class ResolutionNotesForm(forms.Form):
         }),
         required=True,
         help_text='Describe how the issue was resolved'
+    )
+
+
+class TicketCommentForm(forms.Form):
+    """Form for adding a comment/update to a ticket."""
+    body = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'w-full px-4 py-2 rounded-md bg-input-bg-light dark:bg-deep-dark border border-[rgba(15,23,42,0.14)] dark:border-[rgba(148,163,184,0.25)] text-text-primary-light dark:text-text-primary-dark placeholder:text-text-muted-light dark:placeholder:text-text-muted-dark focus:outline-none focus:ring-2 focus:ring-light-blue-focus dark:focus:ring-calm-blue-focus transition-colors',
+            'placeholder': 'Add a comment or update...',
+            'rows': 3
+        }),
+        required=True,
+        max_length=2000,
+        help_text='Your comment or update'
     )
 
 

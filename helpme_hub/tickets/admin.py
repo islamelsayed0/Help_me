@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ticket
+from .models import Ticket, TicketComment
 
 
 @admin.register(Ticket)
@@ -24,3 +24,12 @@ class TicketAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'updated_at')
         }),
     )
+
+
+@admin.register(TicketComment)
+class TicketCommentAdmin(admin.ModelAdmin):
+    list_display = ['id', 'ticket', 'author', 'is_internal', 'created_at']
+    list_filter = ['is_internal', 'created_at']
+    search_fields = ['body', 'author__email', 'ticket__title']
+    readonly_fields = ['created_at']
+    raw_id_fields = ['ticket', 'author']

@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 from django.contrib.auth import views as auth_views
 from . import views
 from . import admin_views
@@ -42,19 +43,15 @@ urlpatterns = [
     path('admin/access-code/', admin_views.view_access_code_view, name='admin_access_code'),
     path('admin/access-code/regenerate/', admin_views.regenerate_access_code_view, name='admin_regenerate_access_code'),
     
-    # Subscription
+    # Support / Donate (formerly Subscription)
     path('organization/subscription/', views.subscription_view, name='subscription'),
-    path('organization/subscription/upgrade/', views.upgrade_plan_view, name='upgrade_plan'),
-    path('organization/subscription/ai-addon/', views.toggle_ai_addon_view, name='toggle_ai_addon'),
-    path('organization/subscription/stripe/success/', views.stripe_checkout_success_view, name='stripe_checkout_success'),
-    path('organization/subscription/stripe/cancel/', views.stripe_checkout_cancel_view, name='stripe_checkout_cancel'),
-    
-    # Stripe Webhook (no authentication required)
-    path('stripe/webhook/', views.stripe_webhook_view, name='stripe_webhook'),
-    
-    # AI Add-On
-    path('ai-addon/', views.ai_addon_view, name='ai_addon'),
-    
+    path('organization/subscription/upgrade/', RedirectView.as_view(pattern_name='accounts:subscription', permanent=False)),
+    path('organization/subscription/stripe/success/', RedirectView.as_view(pattern_name='accounts:subscription', permanent=False)),
+    path('organization/subscription/stripe/cancel/', RedirectView.as_view(pattern_name='accounts:subscription', permanent=False)),
+
+    # Legacy: AI Add-On page removed; redirect to Support
+    path('ai-addon/', RedirectView.as_view(pattern_name='accounts:subscription', permanent=False)),
+
     # Superadmin School Groups Management
     path('superadmin/schoolgroups/', admin_views.superadmin_schoolgroups_list_view, name='superadmin_schoolgroups'),
     path('superadmin/schoolgroups/<int:schoolgroup_id>/', admin_views.superadmin_schoolgroup_detail_view, name='superadmin_schoolgroup_detail'),

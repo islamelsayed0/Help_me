@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ item.name }} - Inventory - HelpMe Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-8">
+    <div class="mb-6">
+        <a href="{% url 'inventory:item_list' %}" class="text-sm text-light-blue dark:text-calm-blue hover:underline">← Back to inventory</a>
+    </div>
+    <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
+        <div class="flex items-start justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark">{{ item.name }}</h1>
+                <p class="text-text-secondary-light dark:text-text-secondary-dark mt-1">Item # {{ item.item_number }}</p>
+                {% if item.is_low_stock %}
+                <span class="inline-block mt-2 px-2 py-1 text-xs font-medium rounded-full bg-warning-bg-light dark:bg-warning-bg text-warning-text-light dark:text-warning-text">Low stock</span>
+                {% endif %}
+            </div>
+            {% if user.is_admin %}
+            <a href="{% url 'inventory:admin_item_edit' item.id %}" class="px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-sm font-medium rounded-md transition-colors">Edit</a>
+            {% endif %}
+        </div>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <dt class="text-sm font-medium text-text-muted-light dark:text-text-muted-dark">Location</dt>
+                <dd class="mt-1 text-text-primary-light dark:text-text-primary-dark">{{ item.location }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-text-muted-light dark:text-text-muted-dark">Quantity on hand</dt>
+                <dd class="mt-1 text-text-primary-light dark:text-text-primary-dark">{{ item.quantity }}{% if item.min_stock > 0 %} <span class="text-sm text-text-secondary-light dark:text-text-secondary-dark">(min: {{ item.min_stock }})</span>{% endif %}</dd>
+            </div>
+            {% if item.serial_number %}
+            <div>
+                <dt class="text-sm font-medium text-text-muted-light dark:text-text-muted-dark">Serial number</dt>
+                <dd class="mt-1 text-text-primary-light dark:text-text-primary-dark">{{ item.serial_number }}</dd>
+            </div>
+            {% endif %}
+            {% if item.buy_link %}
+            <div class="sm:col-span-2">
+                <dt class="text-sm font-medium text-text-muted-light dark:text-text-muted-dark">Buy / reorder link</dt>
+                <dd class="mt-1"><a href="{{ item.buy_link }}" target="_blank" rel="noopener noreferrer" class="text-light-blue dark:text-calm-blue hover:underline">{{ item.buy_link|truncatechars:60 }}</a></dd>
+            </div>
+            {% endif %}
+            {% if item.notes %}
+            <div class="sm:col-span-2">
+                <dt class="text-sm font-medium text-text-muted-light dark:text-text-muted-dark">Notes</dt>
+                <dd class="mt-1 text-text-primary-light dark:text-text-primary-dark whitespace-pre-wrap">{{ item.notes }}</dd>
+            </div>
+            {% endif %}
+        </dl>
+        <p class="mt-6 text-xs text-text-muted-light dark:text-text-muted-dark">Updated {{ item.updated_at|date:"M d, Y" }}</p>
+    </div>
+</div>
+{% endblock %}

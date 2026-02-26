@@ -46,13 +46,101 @@ DEFAULT_FROM_EMAIL=noreply@yourdomain.com
 
 ### Stripe Configuration
 
+#### Step 1: Get Your Stripe API Keys
+
+1. Go to [Stripe Dashboard](https://dashboard.stripe.com/)
+2. Navigate to **Developers** → **API keys**
+3. You'll see two keys:
+   - **Publishable key** (starts with `pk_live_...` or `pk_test_...`)
+   - **Secret key** (starts with `sk_live_...` or `sk_test_...`)
+4. **Important:** 
+   - Use **test keys** (`pk_test_...` and `sk_test_...`) for development/testing
+   - Use **live keys** (`pk_live_...` and `sk_live_...`) for production
+   - Toggle between test and live mode using the toggle switch in Stripe Dashboard
+
+#### Step 2: Create Products and Prices
+
+You need to create 4 products in Stripe Dashboard:
+
+1. **Go to Products** → **Add product**
+
+2. **Create Pro Plan - Monthly:**
+   - Name: `Pro Plan - Monthly`
+   - Description: `Monthly subscription to Pro Plan`
+   - Pricing model: `Standard pricing`
+   - Price: Set your monthly price (e.g., `$29.00`)
+   - Billing period: `Monthly`
+   - Click **Save product**
+   - **Copy the Price ID** (starts with `price_...`) - this is your `STRIPE_PRICE_ID_PRO_MONTHLY`
+
+3. **Create Pro Plan - Yearly:**
+   - Name: `Pro Plan - Yearly`
+   - Description: `Yearly subscription to Pro Plan`
+   - Pricing model: `Standard pricing`
+   - Price: Set your yearly price (e.g., `$290.00`)
+   - Billing period: `Yearly`
+   - Click **Save product**
+   - **Copy the Price ID** - this is your `STRIPE_PRICE_ID_PRO_YEARLY`
+
+4. **Create Enterprise Plan:**
+   - Name: `Enterprise Plan`
+   - Description: `Enterprise subscription plan`
+   - Pricing model: `Standard pricing`
+   - Price: Set your enterprise price (e.g., `$99.00`)
+   - Billing period: `Monthly` or `Yearly` (choose based on your pricing model)
+   - Click **Save product**
+   - **Copy the Price ID** - this is your `STRIPE_PRICE_ID_ENTERPRISE`
+
+5. **Create AI Add-On:**
+   - Name: `AI Add-On`
+   - Description: `AI chat add-on subscription`
+   - Pricing model: `Standard pricing`
+   - Price: `$7.00`
+   - Billing period: `Monthly`
+   - Click **Save product**
+   - **Copy the Price ID** - this is your `STRIPE_PRICE_ID_AI_ADDON`
+
+**Note:** To find Price IDs after creation, go to **Products** → click on a product → scroll to **Pricing** section → click on the price → the Price ID is shown at the top.
+
+#### Step 3: Set Up Webhook Endpoint
+
+1. **Go to Developers** → **Webhooks** → **Add endpoint**
+
+2. **Set the endpoint URL:**
+   - For production: `https://your-app.railway.app/accounts/stripe/webhook/`
+   - Replace `your-app.railway.app` with your actual Railway domain
+   - For local testing, use [Stripe CLI](https://stripe.com/docs/stripe-cli) to forward webhooks
+
+3. **Select events to listen for:**
+   - `checkout.session.completed` - When a customer completes checkout
+   - `customer.subscription.updated` - When subscription is updated
+   - `customer.subscription.deleted` - When subscription is cancelled
+   - `invoice.payment_succeeded` - When payment succeeds
+   - `invoice.payment_failed` - When payment fails
+
+4. **Click Add endpoint**
+
+5. **Copy the Signing secret:**
+   - After creating the endpoint, click on it
+   - In the **Signing secret** section, click **Reveal** or **Click to reveal**
+   - Copy the secret (starts with `whsec_...`)
+   - This is your `STRIPE_WEBHOOK_SECRET`
+
+**Important:** The webhook secret is only shown once when you first create the endpoint. If you lose it, you'll need to create a new endpoint or regenerate the secret.
+
+#### Step 4: Add to Environment Variables
+
+Add these to your Railway environment variables:
+
 ```env
-# Stripe Settings (from your Stripe dashboard)
-STRIPE_PUBLISHABLE_KEY=pk_live_...
-STRIPE_SECRET_KEY=sk_live_...
+# Stripe API Keys (from Step 1)
+STRIPE_PUBLISHABLE_KEY=pk_live_51SoUhZACGLosuIt5yA13DAr9gvSMSAPrLtJdXJ6ofuXyPHCAx6MyaMXcKGli9L2pBTIsOp8iX25rbmqUEgHSM8Ye00QE0l0PBN
+STRIPE_SECRET_KEY=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
+
+# Stripe Webhook Secret (from Step 3)
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Stripe Price IDs (create products/prices in Stripe dashboard)
+# Stripe Price IDs (from Step 2)
 STRIPE_PRICE_ID_PRO_MONTHLY=price_...
 STRIPE_PRICE_ID_PRO_YEARLY=price_...
 STRIPE_PRICE_ID_ENTERPRISE=price_...
@@ -137,24 +225,47 @@ site.name = 'HelpMe Hub'
 site.save()
 ```
 
-## Step 4: Stripe Webhook Setup
+## Step 4: Stripe Webhook Testing
 
-1. **Create a webhook endpoint** in Stripe Dashboard
-   - URL: `https://your-app.railway.app/accounts/stripe/webhook/`
-   - Events to listen for:
-     - `checkout.session.completed`
-     - `customer.subscription.updated`
-     - `customer.subscription.deleted`
-     - `invoice.payment_succeeded`
-     - `invoice.payment_failed`
+After setting up your webhook endpoint (see Step 1, Section 3 above), test it:
 
-2. **Copy the webhook secret** and add it to Railway environment variables as `STRIPE_WEBHOOK_SECRET`
+### Local Testing with Stripe CLI
 
-3. **Test the webhook** using Stripe CLI:
+1. **Install Stripe CLI:**
+   ```bash
+   # macOS
+   brew install stripe/stripe-cli/stripe
+   
+   # Or download from: https://stripe.com/docs/stripe-cli
+   ```
 
-```bash
-stripe listen --forward-to https://your-app.railway.app/accounts/stripe/webhook/
-```
+2. **Login to Stripe:**
+   ```bash
+   stripe login
+   ```
+
+3. **Forward webhooks to local server:**
+   ```bash
+   stripe listen --forward-to http://localhost:8000/accounts/stripe/webhook/
+   ```
+
+4. **Test webhook events:**
+   ```bash
+   stripe trigger checkout.session.completed
+   ```
+
+### Production Testing
+
+1. **Use Stripe Dashboard** → **Webhooks** → Click on your endpoint
+2. **Send test webhook** from the dashboard
+3. **Check Railway logs** to verify webhook is received and processed
+4. **Verify subscription updates** in your application
+
+### Troubleshooting Webhooks
+
+- **Webhook not received:** Check Railway logs, verify webhook URL is correct
+- **Signature verification failed:** Ensure `STRIPE_WEBHOOK_SECRET` matches the signing secret
+- **Events not processing:** Check application logs for errors in webhook handler
 
 ## Step 5: Email Service Setup
 
@@ -197,16 +308,30 @@ Railway automatically provides:
 - **Build logs** for deployment issues
 
 For production monitoring, consider:
-- **Sentry** for error tracking
+- **Sentry** for error tracking (see [MONITORING_AND_BACKUPS.md](MONITORING_AND_BACKUPS.md))
 - **Railway Metrics** for performance monitoring
 - **Uptime monitoring** (UptimeRobot, etc.)
+
+### Setting Up Sentry (Recommended)
+
+1. Create account at [https://sentry.io](https://sentry.io)
+2. Create a Django project and copy your DSN
+3. Add to Railway environment variables:
+   ```env
+   SENTRY_DSN=https://xxxxx@xxxxx.ingest.sentry.io/xxxxx
+   SENTRY_ENVIRONMENT=production
+   SENTRY_TRACES_SAMPLE_RATE=0.1
+   ```
+
+See [MONITORING_AND_BACKUPS.md](MONITORING_AND_BACKUPS.md) for detailed setup instructions.
 
 ## Step 8: Backup Strategy
 
 ### Database Backups
 
 Railway provides automatic PostgreSQL backups, but consider:
-- Daily database dumps
+- Daily database dumps using `python manage.py backup_database`
+- Automated backups via Railway Cron (see [MONITORING_AND_BACKUPS.md](MONITORING_AND_BACKUPS.md))
 - Off-site backup storage
 - Test restore procedures
 
@@ -214,6 +339,8 @@ Railway provides automatic PostgreSQL backups, but consider:
 
 - If using S3/CloudFront, configure backups
 - If using WhiteNoise (default), files are served from app
+
+See [MONITORING_AND_BACKUPS.md](MONITORING_AND_BACKUPS.md) for detailed backup setup instructions.
 
 ## Production Checklist
 

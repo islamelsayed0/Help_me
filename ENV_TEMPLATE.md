@@ -62,6 +62,15 @@ EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 # EMAIL_HOST_PASSWORD=your-email-password
 ```
 
+### Donation Link (Support page)
+
+HelpMe Hub is free. The **Support** page can show a Donate button that links to your donation URL (e.g. Stripe Payment Link, Ko-fi, Buy Me a Coffee). Optional; leave empty to hide the button.
+
+```env
+# Your donation page URL (opens in new tab when user clicks Donate)
+DONATION_URL=https://buy.stripe.com/your-payment-link-id
+```
+
 ### Static Files
 
 ```env
@@ -74,6 +83,16 @@ MEDIA_URL=/media/
 ```env
 # Automatically set by Railway
 RAILWAY_ENVIRONMENT=production
+```
+
+### Sentry Error Monitoring (Optional)
+
+```env
+# Get your DSN from https://sentry.io/settings/projects/
+# Sentry is only enabled when SENTRY_DSN is set and DEBUG=False
+SENTRY_DSN=https://xxxxx@xxxxx.ingest.sentry.io/xxxxx
+SENTRY_ENVIRONMENT=production  # or 'development' for local
+SENTRY_TRACES_SAMPLE_RATE=0.1  # 10% of transactions (0.0 to 1.0)
 ```
 
 ## How to Get Values
@@ -91,6 +110,8 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 5. Add authorized redirect URI: `http://localhost:8000/accounts/google/login/callback/`
    **Important:** The callback URL must be exactly `/accounts/google/login/callback/` (not `/accounts/google/callback/`)
 6. Copy Client ID and Client Secret
+
+### Stripe Configuration
 
 ### DATABASE_URL Format
 ```
@@ -111,9 +132,13 @@ On Railway, set these in the web service environment variables:
 - `DATABASE_URL` - Automatically provided by Railway PostgreSQL
 - `GOOGLE_OAUTH2_CLIENT_ID` - Your Google OAuth client ID
 - `GOOGLE_OAUTH2_CLIENT_SECRET` - Your Google OAuth client secret
+- `DONATION_URL` - Optional; your donation page URL (e.g. Stripe Payment Link) for the Support page
 - `STATIC_URL=/static/`
 - `MEDIA_URL=/media/`
 - `RAILWAY_ENVIRONMENT=production`
+- `SENTRY_DSN` - Your Sentry DSN (optional, for error monitoring)
+- `SENTRY_ENVIRONMENT=production` - Environment name for Sentry
+- `SENTRY_TRACES_SAMPLE_RATE=0.1` - Performance monitoring sample rate
 
 ## Security Reminders
 

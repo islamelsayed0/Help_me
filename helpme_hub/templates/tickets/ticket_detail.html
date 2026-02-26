@@ -84,6 +84,31 @@
                 </div>
             {% endif %}
 
+            <!-- Comments / Updates -->
+            <div class="border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] pt-6">
+                <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-4">Comments & Updates</h3>
+                <div class="space-y-3 mb-4">
+                    {% for comment in comments %}
+                        <div class="bg-light-card-hover dark:bg-dark-card-hover rounded-lg p-4 border border-[rgba(15,23,42,0.06)] dark:border-[rgba(148,163,184,0.10)]">
+                            <div class="flex items-center justify-between text-sm mb-2">
+                                <span class="font-medium text-text-primary-light dark:text-text-primary-dark">{{ comment.author.email }}</span>
+                                <span class="text-text-muted-light dark:text-text-muted-dark">{{ comment.created_at|date:"M d, Y g:i A" }}</span>
+                            </div>
+                            <p class="text-text-secondary-light dark:text-text-secondary-dark whitespace-pre-wrap">{{ comment.body }}</p>
+                        </div>
+                    {% empty %}
+                        <p class="text-text-muted-light dark:text-text-muted-dark text-sm">No comments yet.</p>
+                    {% endfor %}
+                </div>
+                <form method="post" action="{% url 'tickets:ticket_comment' ticket.id %}" class="mt-4">
+                    {% csrf_token %}
+                    {{ comment_form.body }}
+                    <button type="submit" class="mt-2 px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white font-medium rounded-md transition-colors">
+                        Add comment
+                    </button>
+                </form>
+            </div>
+
             <!-- Ticket Info -->
             <div class="border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] pt-6">
                 <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-4">Ticket Information</h3>

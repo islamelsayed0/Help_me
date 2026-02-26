@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'chats',
     'tickets',
     'knowledge',
+    'inventory',
     'audit',
 ]
 
@@ -88,11 +89,20 @@ WSGI_APPLICATION = 'helpme_hub.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL', default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'))
-    )
-}
+# Set USE_SQLITE=1 in .env to use SQLite locally when Railway Postgres is unreachable
+if config('USE_SQLITE', default=False, cast=bool):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=config('DATABASE_URL', default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'))
+        )
+    }
 
 
 # Custom User Model
@@ -233,6 +243,9 @@ STRIPE_PRICE_ID_PRO_YEARLY = config('STRIPE_PRICE_ID_PRO_YEARLY', default='')
 STRIPE_PRICE_ID_ENTERPRISE = config('STRIPE_PRICE_ID_ENTERPRISE', default='')
 STRIPE_PRICE_ID_AI_ADDON = config('STRIPE_PRICE_ID_AI_ADDON', default='')
 
+# Donation link (Support page). Optional; leave empty to hide Donate button.
+DONATION_URL = config('DONATION_URL', default='https://buy.stripe.com/5kQ28qa9sewa60N24s4ZG00')
+
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
 
@@ -347,3 +360,42 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 
+# Sentry Error Monitoring (Optional)
+# Get your DSN from https://sentry.io/settings/projects/
+SENTRY_DSN = config('SENTRY_DSN', default='')
+SENTRY_ENVIRONMENT = config('SENTRY_ENVIRONMENT', default='development' if DEBUG else 'production')
+SENTRY_TRACES_SAMPLE_RATE = config('SENTRY_TRACES_SAMPLE_RATE', default=0.1, cast=float)  # 10% of transactions
+
+if SENTRY_DSN and not DEBUG:  # Only enable Sentry in production
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=SENTRY_ENVIRONMENT,
+        integrations=[
+            DjangoIntegration(
+                transaction_style='url',
+                middleware_spans=True,
+                signals_spans=True,
+                cache_spans=True,
+            ),
+            LoggingIntegration(
+                level=None,  # Capture all logs
+                event_level=None,  # Send all log events
+            ),
+        ],
+        # Performance monitoring
+        traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+        # Set profiles_sample_rate to 1.0 to profile 100%
+        # of sampled transactions.
+        # We recommend adjusting this value in production.
+        profiles_sample_rate=0.0,  # Disable profiling by default
+        
+        # Send user info with errors
+        send_default_pii=True,
+        
+        # Release tracking (optional)
+        # release="helpme-hub@1.0.0",
+    )

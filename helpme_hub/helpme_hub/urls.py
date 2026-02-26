@@ -13,6 +13,7 @@ urlpatterns = [
     path('chats/', include('chats.urls')),
     path('tickets/', include('tickets.urls')),
     path('knowledge/', include('knowledge.urls')),
+    path('inventory/', include('inventory.urls')),
     path('', include('audit.urls')),  # Audit logs (includes superadmin prefix)
     path('', include('accounts.urls')),  # Dashboard and other account pages
 ]

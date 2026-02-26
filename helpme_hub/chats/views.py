@@ -114,8 +114,8 @@ def create_chat_view(request):
                     is_read=False
                 )
                 
-                # Trigger AI response if organization has AI enabled
-                if user_org and user_org.ai_enabled:
+                # Trigger AI response for all users with an organization
+                if user_org:
                     try:
                         ai_message = process_ai_response(chat.id, initial_message)
                         if not ai_message:
@@ -171,9 +171,9 @@ def send_message_view(request, chat_id):
         # Update chat timestamp
         chat.save(update_fields=['updated_at'])
         
-        # Trigger AI response if organization has AI enabled
+        # Trigger AI response for all users with an organization
         user_org = get_user_school_group(user)
-        if user_org and user_org.ai_enabled:
+        if user_org:
             try:
                 process_ai_response(chat.id, form.cleaned_data['content'])
             except Exception as e:
@@ -333,11 +333,11 @@ def quick_help_view(request):
         if not user_message:
             return JsonResponse({'error': 'Message is required'}, status=400)
         
-        # Get user's organization
+        # Get user's organization (AI is available to all users with an organization)
         user_org = get_user_school_group(request.user)
-        if not user_org or not user_org.ai_enabled:
+        if not user_org:
             return JsonResponse({
-                'response': 'AI assistance is not enabled for your organization. Please contact your administrator.'
+                'response': 'You need to be in an organization to use AI assistance.'
             })
         
         # Generate AI response

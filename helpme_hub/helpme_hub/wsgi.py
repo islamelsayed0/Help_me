@@ -13,6 +13,9 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'helpme_hub.settings')
 
+# Initialize Sentry before Django (if configured)
+# Sentry will be initialized in settings.py if SENTRY_DSN is set
+
 application = get_wsgi_application()
 
 

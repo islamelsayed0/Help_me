@@ -2,7 +2,10 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{% block title %}HelpMe Hub{% endblock %}</title>
     
     <!-- Tailwind CSS -->
@@ -90,39 +93,42 @@
     
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-light-bg dark:bg-deep-dark text-text-primary-light dark:text-text-primary-dark min-h-screen transition-colors">
+<body class="bg-light-bg dark:bg-deep-dark text-text-primary-light dark:text-text-primary-dark min-h-screen transition-colors overflow-x-hidden">
     <!-- Navigation Bar -->
     <nav class="bg-light-card dark:bg-dark-card border-b border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] sticky top-0 z-50 transition-colors light-card-shadow">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <!-- Logo and Mobile Menu Button -->
                 <div class="flex items-center">
-                    <button id="mobileMenuButton" class="lg:hidden text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark mr-3 p-2">
+                    <button id="mobileMenuButton" type="button" aria-label="Open menu" class="md:hidden text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark mr-2 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md touch-manipulation">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
-                    <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'accounts:home' %}{% endif %}" class="text-xl font-bold text-purple-accent">
+                    <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'accounts:home' %}{% endif %}" class="text-lg sm:text-xl font-bold text-purple-accent py-2 min-h-[44px] flex items-center">
                         HelpMe Hub
                     </a>
                 </div>
                 
                 <!-- Right Side: Navigation Links, Separator, Controls -->
                 <div class="flex items-center space-x-4">
-                    <!-- Desktop Navigation Links - Primary Only -->
-                    <div class="hidden lg:flex items-center space-x-1">
+                    <!-- Desktop/Tablet Navigation Links (hidden on small mobile) -->
+                    <div class="hidden md:flex items-center space-x-1">
                         {% if user.is_authenticated %}
                             <a href="{% url 'accounts:dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if '/accounts/dashboard' in request.path or '/accounts/admin/dashboard' in request.path or '/accounts/superadmin/dashboard' in request.path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Dashboard</a>
                             <a href="{% url 'chats:chat_list' %}" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if '/chats' in request.path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Chats</a>
                             <a href="{% url 'knowledge:article_list' %}" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if '/knowledge' in request.path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Knowledge Base</a>
+                            <a href="{% url 'inventory:item_list' %}" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if '/inventory' in request.path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Inventory</a>
+                            <a href="{% url 'accounts:subscription' %}" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if '/accounts/organization/subscription' in request.path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Donate</a>
                         {% else %}
                             <a href="{% url 'accounts:home' %}#features" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if request.path == '/' and '#features' in request.get_full_path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">Features</a>
                             <a href="{% url 'accounts:home' %}#about" class="px-3 py-2 rounded-md text-sm font-medium transition-colors {% if request.path == '/' and '#about' in request.get_full_path %}bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark{% else %}text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark{% endif %}">About</a>
+                            <a href="{% url 'accounts:login' %}?next={% url 'accounts:subscription' %}" class="px-3 py-2 rounded-md text-sm font-medium transition-colors text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark">Donate</a>
                         {% endif %}
                     </div>
                     
-                    <!-- Visual Separator (desktop only, shown when navigation links are present) -->
-                    <div class="hidden lg:block h-6 w-px bg-[rgba(15,23,42,0.10)] dark:bg-[rgba(148,163,184,0.15)]"></div>
+                    <!-- Visual Separator (desktop/tablet only) -->
+                    <div class="hidden md:block h-6 w-px bg-[rgba(15,23,42,0.10)] dark:bg-[rgba(148,163,184,0.15)]"></div>
                     
                     {% if user.is_authenticated %}
                         {% load accounts_tags %}
@@ -148,7 +154,7 @@
                     {% endif %}
                     
                     <!-- Dark Mode Toggle -->
-                    <button id="darkModeToggle" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark p-2 rounded-md transition-colors">
+                    <button id="darkModeToggle" type="button" aria-label="Toggle dark mode" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark p-3 min-h-[44px] min-w-[44px] rounded-md transition-colors touch-manipulation flex items-center justify-center">
                         <svg id="sunIcon" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
@@ -160,19 +166,19 @@
                     {% if user.is_authenticated %}
                         <!-- User Profile Dropdown -->
                         <div class="relative">
-                            <button id="profileDropdownButton" class="flex items-center text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark">
-                                <span class="mr-2">{{ user.email|truncatechars:20 }}</span>
+                            <button id="profileDropdownButton" type="button" aria-label="Profile menu" aria-haspopup="true" class="flex items-center text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark min-h-[44px] px-3 py-2 rounded-md touch-manipulation">
+                                <span class="mr-2 text-sm sm:text-base truncate max-w-[120px] sm:max-w-[180px]">{{ user.username|default:user.email }}</span>
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
                             <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-light-card dark:bg-dark-card rounded-md shadow-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
-                                <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 text-sm text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover transition-colors">Profile</a>
-                                <a href="{% url 'accounts:logout' %}" class="block px-4 py-2 text-sm text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover transition-colors">Logout</a>
+                                <a href="{% url 'accounts:profile' %}" class="block px-4 py-3 min-h-[44px] flex items-center text-sm text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover transition-colors touch-manipulation">Profile</a>
+                                <a href="{% url 'accounts:logout' %}" class="block px-4 py-3 min-h-[44px] flex items-center text-sm text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover transition-colors touch-manipulation">Logout</a>
                             </div>
                         </div>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}" class="text-light-blue dark:text-calm-blue hover:text-light-blue-hover dark:hover:text-calm-blue-hover px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                        <a href="{% url 'accounts:login' %}" class="text-light-blue dark:text-calm-blue hover:text-light-blue-hover dark:hover:text-calm-blue-hover px-3 py-2 min-h-[44px] flex items-center rounded-md text-sm font-medium touch-manipulation">Login</a>
                     {% endif %}
                 </div>
             </div>
@@ -180,11 +186,11 @@
     </nav>
     
     <!-- Mobile Sidebar -->
-    <div id="mobileSidebar" class="hidden lg:hidden fixed inset-0 z-50 transition-opacity duration-300" style="backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
-        <div id="mobileSidebarContent" class="fixed inset-y-0 left-0 w-64 bg-light-bg dark:bg-deep-dark border-r border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transform -translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
+    <div id="mobileSidebar" class="hidden md:hidden fixed inset-0 z-50 transition-opacity duration-300" style="backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+        <div id="mobileSidebarContent" class="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-light-bg dark:bg-deep-dark border-r border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transform -translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
             <div class="flex items-center justify-between h-16 px-4 border-b border-[rgba(15,23,42,0.06)] dark:border-[rgba(148,163,184,0.15)] sticky top-0 bg-light-bg dark:bg-deep-dark z-10">
                 <span class="text-xl font-bold text-purple-accent">Menu</span>
-                <button id="closeMobileMenu" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark p-2">
+                <button id="closeMobileMenu" type="button" aria-label="Close menu" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark p-3 min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -210,7 +216,8 @@
                             <div class="mb-4">
                                 <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Organization</p>
                                 <a href="{% url 'accounts:join_organization' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/join-organization' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">➕ Join Organization</a>
-                                <a href="{% url 'accounts:subscription' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/organization/subscription' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">💳 Subscription</a>
+                                <a href="{% url 'inventory:item_list' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/inventory' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">Inventory</a>
+                                <a href="{% url 'accounts:subscription' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/organization/subscription' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">Support</a>
                             </div>
                             
                             <!-- Admin Section -->
@@ -221,6 +228,7 @@
                                     <a href="{% url 'chats:admin_inbox' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/chats/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📥 Chat Inbox</a>
                                     <a href="{% url 'tickets:admin_board' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/tickets/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📋 Ticket Board</a>
                                     <a href="{% url 'knowledge:admin_article_list' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/knowledge/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📝 Manage Articles</a>
+                                    <a href="{% url 'inventory:admin_item_list' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/inventory/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📦 Manage Inventory</a>
                                     {% load schoolgroups_tags %}
                                     {% get_pending_join_requests_count user as pending_count %}
                                     <a href="{% url 'accounts:admin_join_requests' %}" class="block px-4 py-3 text-base font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors flex items-center justify-between {% if '/accounts/admin/joinrequests' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">
@@ -260,7 +268,7 @@
     <div class="flex">
         <!-- Desktop Sidebar (only shown when authenticated) -->
         {% if user.is_authenticated %}
-        <aside class="hidden lg:block w-64 bg-light-sidebar dark:bg-sidebar-dark border-r border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] min-h-screen transition-colors sticky top-16">
+        <aside class="hidden md:block w-64 flex-shrink-0 bg-light-sidebar dark:bg-sidebar-dark border-r border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] min-h-screen transition-colors sticky top-16">
             <nav class="mt-4 px-2 space-y-1">
                 <!-- Main Section -->
                 <div class="mb-4">
@@ -280,7 +288,8 @@
                 <div class="mb-4">
                     <p class="px-4 py-2 text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Organization</p>
                     <a href="{% url 'accounts:join_organization' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/join-organization' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">➕ Join Organization</a>
-                    <a href="{% url 'accounts:subscription' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/organization/subscription' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">💳 Subscription</a>
+                    <a href="{% url 'inventory:item_list' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/inventory' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">Inventory</a>
+                    <a href="{% url 'accounts:subscription' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/organization/subscription' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">Support</a>
                 </div>
                 
                 <!-- Admin Section -->
@@ -291,6 +300,7 @@
                         <a href="{% url 'chats:admin_inbox' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/chats/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📥 Chat Inbox</a>
                         <a href="{% url 'tickets:admin_board' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/tickets/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📋 Ticket Board</a>
                         <a href="{% url 'knowledge:admin_article_list' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/knowledge/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📝 Manage Articles</a>
+                        <a href="{% url 'inventory:admin_item_list' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/inventory/admin' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">📦 Manage Inventory</a>
                         {% load schoolgroups_tags %}
                         {% get_pending_join_requests_count user as pending_count %}
                         <a href="{% url 'accounts:admin_join_requests' %}" class="block px-4 py-2 text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:bg-light-card-hover dark:hover:bg-dark-card-hover rounded-md transition-colors {% if '/accounts/admin/joinrequests' in request.path %}bg-light-card-hover dark:bg-dark-card-hover{% endif %}">
@@ -318,7 +328,7 @@
         {% endif %}
         
         <!-- Content Area -->
-        <main class="flex-1 {% if not user.is_authenticated %}p-0{% else %}p-4 sm:p-6{% endif %}">
+        <main class="flex-1 min-w-0 {% if not user.is_authenticated %}p-0{% else %}p-4 sm:p-6{% endif %}">
             <!-- Messages -->
             {% if messages %}
                 <div class="mb-4">
@@ -345,23 +355,23 @@
     
     <!-- Floating Help Bubble -->
     {% if user.is_authenticated %}
-        <div id="helpBubble" class="fixed bottom-6 right-6 z-50">
-            <button id="helpBubbleButton" class="w-14 h-14 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95">
+        <div id="helpBubble" class="fixed bottom-6 right-4 sm:right-6 z-50">
+            <button id="helpBubbleButton" type="button" aria-label="Open help chat" class="min-w-[56px] min-h-[56px] w-14 h-14 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95 touch-manipulation">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </button>
         </div>
 
-        <!-- Help Chat Widget -->
-        <div id="helpChatWidget" class="fixed bottom-24 right-6 w-96 h-[500px] bg-light-card dark:bg-dark-card rounded-lg shadow-2xl border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] z-50 hidden flex flex-col transition-all">
+        <!-- Help Chat Widget (responsive: full-width on mobile, fixed width on sm+) -->
+        <div id="helpChatWidget" class="fixed left-4 right-4 bottom-24 sm:left-auto sm:right-6 sm:w-96 w-[calc(100vw-2rem)] max-w-sm sm:max-w-none h-[70vh] min-h-[300px] sm:h-[500px] max-h-[85vh] bg-light-card dark:bg-dark-card rounded-lg shadow-2xl border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] z-50 hidden flex flex-col transition-all">
             <!-- Chat Header -->
-            <div class="p-4 border-b border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] flex items-center justify-between">
-                <div>
+            <div class="p-4 border-b border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] flex items-center justify-between flex-shrink-0">
+                <div class="min-w-0">
                     <h3 class="text-lg font-semibold text-text-primary-light dark:text-text-primary-dark">Help Assistant</h3>
                     <p class="text-xs text-text-muted-light dark:text-text-muted-dark">Ask me anything!</p>
                 </div>
-                <button id="closeHelpChat" class="text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark">
+                <button id="closeHelpChat" type="button" aria-label="Close help chat" class="p-3 min-h-[44px] min-w-[44px] flex items-center justify-center text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark rounded-md touch-manipulation flex-shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -389,7 +399,7 @@
                     >
                     <button 
                         type="submit" 
-                        class="px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white rounded-md transition-colors"
+                        class="min-h-[44px] px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white rounded-md transition-colors touch-manipulation"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

@@ -12,6 +12,7 @@ urlpatterns = [
     path('', views.ticket_list_view, name='ticket_list'),
     path('create/', views.create_ticket_view, name='create_ticket'),
     path('<int:ticket_id>/', views.ticket_detail_view, name='ticket_detail'),
+    path('<int:ticket_id>/comment/', views.ticket_comment_view, name='ticket_comment'),
     
     # Admin routes
     path('admin/board/', admin_views.admin_ticket_board_view, name='admin_board'),

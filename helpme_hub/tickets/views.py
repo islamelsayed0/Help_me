@@ -8,8 +8,8 @@ from django.db.models import Q, Count
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from .models import Ticket
-from .forms import EscalateChatForm, CreateTicketForm
+from .models import Ticket, TicketComment
+from .forms import EscalateChatForm, CreateTicketForm, TicketCommentForm
 from .decorators import ticket_membership_required, ticket_owner_required
 from accounts.utils import get_user_school_group, has_accepted_membership
 from audit.utils import log_action
@@ -92,23 +92,49 @@ def ticket_list_view(request):
 @ticket_membership_required
 @ticket_owner_required
 def ticket_detail_view(request, ticket_id):
-    """Display ticket details and linked chat transcript."""
+    """Display ticket details, linked chat transcript, and comments."""
     ticket = get_object_or_404(Ticket, id=ticket_id)
     user = request.user
     
     # Get linked chat if exists
     try:
         chat = ticket.chat
-    except:
+    except Exception:
         chat = None
     chat_messages = []
     if chat:
         chat_messages = chat.messages.all().order_by('created_at')
     
+    # Comments: users see only non-internal comments
+    comments = ticket.comments.filter(is_internal=False).select_related('author').order_by('created_at')
+    
     context = {
         'ticket': ticket,
         'chat': chat,
         'chat_messages': chat_messages,
+        'comments': comments,
+        'comment_form': TicketCommentForm(),
     }
     
     return render(request, 'tickets/ticket_detail.html', context)
+
+
+@login_required
+@ticket_membership_required
+@ticket_owner_required
+@require_http_methods(['POST'])
+def ticket_comment_view(request, ticket_id):
+    """Add a comment/update to a ticket."""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    form = TicketCommentForm(request.POST)
+    if form.is_valid():
+        TicketComment.objects.create(
+            ticket=ticket,
+            author=request.user,
+            body=form.cleaned_data['body'].strip(),
+            is_internal=False,
+        )
+        messages.success(request, 'Comment added.')
+    else:
+        messages.error(request, 'Please enter a comment.')
+    return redirect('tickets:ticket_detail', ticket_id=ticket.id)
