@@ -5,8 +5,9 @@ Django>=4.2,<5.0
 psycopg2-binary>=2.9.0
 dj-database-url>=2.1.0
 
-# Authentication
+# Authentication (requests required by allauth socialaccount providers)
 django-allauth>=0.57.0
+requests>=2.28.0
 
 # Environment Variables
 python-decouple>=3.8
@@ -20,4 +21,9 @@ whitenoise>=6.6.0
 # Security (recommended)
 django-cors-headers>=4.3.0
 
-
+# App dependencies (used when deploying from repo root, e.g. Railway)
+google-generativeai>=0.8.0
+stripe>=7.0.0
+markdown>=3.5.0
+Pygments>=2.17.0
+sentry-sdk>=2.15.0
