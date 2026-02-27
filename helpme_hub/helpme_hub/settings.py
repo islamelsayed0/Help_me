@@ -161,7 +161,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # WhiteNoise configuration
 # Use ManifestStaticFilesStorage for production, but not for tests
-if not DEBUG or 'test' in sys.argv:
+if DEBUG and 'test' not in sys.argv:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 else:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

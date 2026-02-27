@@ -1,0 +1,390 @@
+/* Custom CSS Variables for Color Scheme */
+:root {
+    /* Light Mode Colors - Final Palette */
+    /* Background Layers */
+    --light-bg: #F8FAFC; /* Soft slate white main background */
+    --light-sidebar: #F8FAFC; /* Sidebar background */
+    --light-sidebar-alt: #F1F5F9; /* Sidebar alternate */
+    
+    /* Card and Surface Layers */
+    --light-card: #FFFFFF; /* Pure white card background */
+    --light-card-hover: #F1F5F9; /* Card hover or active */
+    
+    /* Borders - Subtle and Translucent */
+    --light-border: rgba(15,23,42,0.10); /* Subtle borders */
+    --light-divider: rgba(15,23,42,0.06); /* Divider lines */
+    --light-input-border: rgba(15,23,42,0.14); /* Input borders */
+    
+    /* Text Hierarchy */
+    --light-text: #0F172A; /* Primary text */
+    --light-text-secondary: #334155; /* Secondary text */
+    --light-text-muted: #64748B; /* Muted text */
+    --light-placeholder: #94A3B8; /* Placeholder text */
+    
+    /* Primary Actions - Calm Blue */
+    --light-blue: #2563EB; /* Primary actions */
+    --light-blue-hover: #1D4ED8; /* Primary hover */
+    --light-blue-active: #1E40AF; /* Primary active */
+    --light-blue-focus: #93C5FD; /* Focus ring */
+    
+    /* Purple Accents - Decorative Only */
+    --purple-accent: #6366F1; /* Accent purple */
+    --purple-accent-light: #EEF2FF; /* Purple light background */
+    
+    /* Status Colors */
+    --success-text: #16A34A;
+    --success-bg: #ECFDF5;
+    --warning-text: #D97706;
+    --warning-bg: #FFFBEB;
+    --error-text: #DC2626;
+    --error-bg: #FEF2F2;
+    
+    /* Input Colors */
+    --input-bg-light: #FFFFFF; /* Input background */
+    
+    /* Color aliases for compatibility */
+    --primary: #6366F1; /* Purple for logo/accent only */
+    --primary-dark: #4F46E5;
+    --color-primary: #2563EB; /* Blue for primary actions */
+    --color-secondary: #1D4ED8;
+    --color-light: #F8FAFC;
+    --color-accent: #6366F1;
+    --color-white: #FFFFFF;
+}
+
+.dark {
+    /* Dark Mode Colors - Final Palette */
+    /* Background Layers */
+    --dark-bg: #020617; /* Near black, premium dark main background */
+    --dark-sidebar: #020617; /* Sidebar background */
+    --dark-sidebar-alt: #030712; /* Sidebar alternate */
+    
+    /* Card and Surface Layers */
+    --dark-card: #0B1220; /* Blue tinted card background */
+    --dark-card-hover: #0F172A; /* Card hover or active state */
+    
+    /* Borders - Subtle and Translucent */
+    --dark-border: rgba(148,163,184,0.15); /* Subtle translucent borders */
+    --dark-input-border: rgba(148,163,184,0.25); /* Input borders */
+    
+    /* Text Hierarchy */
+    --dark-text: #E5E7EB; /* Primary text */
+    --dark-text-light: #94A3B8; /* Secondary text */
+    --dark-text-muted: #64748B; /* Muted text */
+    
+    /* Primary Actions - Calm Blue */
+    --calm-blue: #3B82F6; /* Primary actions (buttons, links) */
+    --calm-blue-hover: #2563EB; /* Primary hover */
+    --calm-blue-active: #1D4ED8; /* Primary active */
+    --calm-blue-focus: #60A5FA; /* Focus ring */
+    
+    /* Purple Accents - Decorative Only */
+    --purple-accent: #6366F1; /* Accent purple */
+    --purple-accent-dark: #312E81; /* Accent purple dark */
+    
+    /* Status Colors */
+    --success-text: #22C55E;
+    --success-bg: #052E16;
+    --warning-text: #F59E0B;
+    --warning-bg: #451A03;
+    --error-text: #EF4444;
+    --error-bg: #450A0A;
+    
+    /* Input Colors */
+    --input-bg: #020617; /* Input background */
+    --input-placeholder: #64748B; /* Placeholder text */
+    
+    /* Color aliases for compatibility */
+    --color-dark: #0B1220;
+    --color-text: #E5E7EB;
+    --color-text-light: #94A3B8;
+    --color-text-muted: #64748B;
+    --deep-dark: #020617;
+}
+
+/* Smooth transitions */
+* {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--dark-bg, #0C0B19);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--dark-card, #1e1e1e);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-border, #2a2a2a);
+}
+
+/* Light mode scrollbar */
+:root:not(.dark) ::-webkit-scrollbar-track {
+    background: var(--light-bg, #FFFFFF);
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb {
+    background: var(--light-border, #e5e7eb);
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+}
+
+/* Loading animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.5s ease-in;
+}
+
+/* Focus styles */
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: var(--light-blue-focus, #93C5FD); /* Light mode: calm blue focus */
+}
+
+/* Dark mode focus uses calm blue focus ring */
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+    ring-color: var(--calm-blue-focus, #60A5FA);
+}
+
+/* Card shadows for light mode only - soft and subtle */
+:root:not(.dark) .light-card-shadow {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+}
+
+.dark .light-card-shadow {
+    box-shadow: none;
+}
+
+/* Button hover effects */
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Wave Pattern Background */
+.wave-pattern {
+    background-image: 
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(147, 197, 253, 0.25) 10px,
+            rgba(147, 197, 253, 0.25) 20px
+        ),
+        repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 10px,
+            rgba(196, 181, 253, 0.2) 10px,
+            rgba(196, 181, 253, 0.2) 20px
+        );
+    background-size: 40px 40px;
+    opacity: 0.7;
+    animation: wave-flow 20s linear infinite;
+}
+
+.dark .wave-pattern {
+    background-image: 
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(59, 130, 246, 0.15) 10px,
+            rgba(59, 130, 246, 0.15) 20px
+        ),
+        repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 10px,
+            rgba(99, 102, 241, 0.12) 10px,
+            rgba(99, 102, 241, 0.12) 20px
+        );
+    opacity: 0.5;
+}
+
+@keyframes wave-flow {
+    0% {
+        background-position: 0 0, 0 0;
+    }
+    100% {
+        background-position: 40px 40px, -40px -40px;
+    }
+}
+
+/* Sparkles Animation */
+.sparkles {
+    background-image: 
+        radial-gradient(2px 2px at 20% 30%, rgba(37, 99, 235, 0.6), transparent),
+        radial-gradient(2px 2px at 60% 70%, rgba(99, 102, 241, 0.5), transparent),
+        radial-gradient(1px 1px at 50% 50%, rgba(37, 99, 235, 0.4), transparent),
+        radial-gradient(1px 1px at 80% 10%, rgba(99, 102, 241, 0.5), transparent),
+        radial-gradient(2px 2px at 90% 60%, rgba(37, 99, 235, 0.6), transparent),
+        radial-gradient(1px 1px at 33% 80%, rgba(99, 102, 241, 0.4), transparent),
+        radial-gradient(2px 2px at 10% 40%, rgba(37, 99, 235, 0.5), transparent),
+        radial-gradient(1px 1px at 70% 20%, rgba(99, 102, 241, 0.5), transparent);
+    background-size: 200% 200%;
+    background-position: 0% 0%;
+    opacity: 0.8;
+    animation: sparkle 8s ease-in-out infinite;
+}
+
+.dark .sparkles {
+    background-image: 
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 80% 10%, white, transparent),
+        radial-gradient(2px 2px at 90% 60%, white, transparent),
+        radial-gradient(1px 1px at 33% 80%, white, transparent),
+        radial-gradient(2px 2px at 10% 40%, white, transparent),
+        radial-gradient(1px 1px at 70% 20%, white, transparent);
+    opacity: 0.8;
+}
+
+@keyframes sparkle {
+    0%, 100% {
+        opacity: 0.6;
+        background-position: 0% 0%;
+    }
+    50% {
+        opacity: 1;
+        background-position: 100% 100%;
+    }
+}
+
+/* Floating Code Bubbles */
+.code-bubble {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(243, 232, 255, 0.9));
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.15), 0 4px 16px rgba(99, 102, 241, 0.1);
+    z-index: 1;
+    pointer-events: none;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    animation: float 6s ease-in-out infinite;
+}
+
+.dark .code-bubble {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.7));
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.code-bubble pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.code-bubble code {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+/* Bubble Positioning */
+.code-bubble-1 {
+    top: 10%;
+    left: 5%;
+    animation-delay: 0s;
+    max-width: 240px;
+}
+
+.code-bubble-2 {
+    bottom: 15%;
+    right: 8%;
+    animation-delay: 2s;
+    max-width: 220px;
+}
+
+.code-bubble-3 {
+    top: 60%;
+    left: 3%;
+    animation-delay: 4s;
+    max-width: 200px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .code-bubble {
+        padding: 12px 16px;
+        max-width: 180px;
+    }
+    
+    .code-bubble code {
+        font-size: 10px;
+    }
+    
+    .code-bubble-1 {
+        top: 10%;
+        left: 5%;
+    }
+    
+    .code-bubble-2 {
+        bottom: 15%;
+        right: 5%;
+    }
+    
+    .code-bubble-3 {
+        top: 45%;
+        left: 2%;
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px) translateX(0px);
+    }
+    33% {
+        transform: translateY(-10px) translateX(5px);
+    }
+    66% {
+        transform: translateY(5px) translateX(-5px);
+    }
+}
+
+/* Old code/binary patterns removed - replaced with floating bubbles design */
