@@ -231,7 +231,7 @@ else:
 # Google Gemini AI Settings
 GOOGLE_GEMINI_API_KEY = config('GOOGLE_GEMINI_API_KEY', default='')
 GEMINI_MODEL = config('GEMINI_MODEL', default='gemini-2.0-flash')  # Use gemini-2.0-flash (available model)
-GEMINI_MAX_TOKENS = config('GEMINI_MAX_TOKENS', default=1000, cast=int)
+GEMINI_MAX_TOKENS = config('GEMINI_MAX_TOKENS', default=300, cast=int)
 GEMINI_TEMPERATURE = config('GEMINI_TEMPERATURE', default=0.7, cast=float)
 
 # Stripe Settings

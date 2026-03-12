@@ -13,8 +13,10 @@ import json
 from .models import Chat, ChatMessage
 from .forms import CreateChatForm, ChatMessageForm
 from .decorators import chat_membership_required, chat_owner_required
-from .ai_service import generate_ai_response
+from .ai_service import generate_ai_response, process_ai_response, detect_ticket_intent
 from accounts.utils import get_user_school_group, has_accepted_membership
+from audit.utils import log_action
+from tickets.services import create_ticket_from_chat
 
 
 @login_required
@@ -159,33 +161,203 @@ def send_message_view(request, chat_id):
     
     form = ChatMessageForm(request.POST)
     if form.is_valid():
+        content = form.cleaned_data['content']
+
         # Create user message
         user_message = ChatMessage.objects.create(
             chat=chat,
             sender=user,
             sender_type='user',
-            content=form.cleaned_data['content'],
+            content=content,
             is_read=False
         )
         
         # Update chat timestamp
         chat.save(update_fields=['updated_at'])
         
-        # Trigger AI response for all users with an organization
-        user_org = get_user_school_group(user)
-        if user_org:
-            try:
-                process_ai_response(chat.id, form.cleaned_data['content'])
-            except Exception as e:
-                # Log error but don't fail message sending
-                import logging
-                logging.getLogger(__name__).error(f'AI response failed: {str(e)}')
+        # If the user used the /ticket command or expressed a clear ticket intent,
+        # open a ticket from this chat instead of sending the message to the AI.
+        text = content.strip()
+        text_lower = text.lower()
+        intent = detect_ticket_intent(text)
+
+        if text.startswith('/ticket'):
+            ticket = _create_ticket_from_chat_command(user, chat, text)
+            if ticket:
+                ChatMessage.objects.create(
+                    chat=chat,
+                    sender=None,
+                    sender_type='ai',
+                    content=(
+                        f"I've opened Ticket #{ticket.id} for you: \"{ticket.title}\". "
+                        "An admin will review it and follow up."
+                    ),
+                    is_read=False,
+                )
+        elif intent and intent.get('intent') == 'create_ticket':
+            # Let the intent helper provide a category hint while reusing the
+            # same /ticket parsing behaviour for consistency.
+            hinted_category = intent.get('category') or 'general'
+            synthetic_command = f"/ticket {hinted_category} {text}"
+            ticket = _create_ticket_from_chat_command(user, chat, synthetic_command)
+            if ticket:
+                ChatMessage.objects.create(
+                    chat=chat,
+                    sender=None,
+                    sender_type='ai',
+                    content=(
+                        f"I've opened Ticket #{ticket.id} for you: \"{ticket.title}\". "
+                        "An admin will review it and follow up."
+                    ),
+                    is_read=False,
+                )
+        else:
+            # Trigger AI response for all users with an organization
+            user_org = get_user_school_group(user)
+            if user_org:
+                try:
+                    process_ai_response(chat.id, content)
+                except Exception as e:
+                    # Log error but don't fail message sending
+                    import logging
+                    logging.getLogger(__name__).error(f'AI response failed: {str(e)}')
         
         messages.success(request, 'Message sent!')
     else:
         messages.error(request, 'Please correct the errors below.')
     
     return redirect('chats:chat_detail', chat_id=chat.id)
+
+
+def _create_ticket_from_chat_command(user, chat, command_text):
+    """
+    Parse a /ticket command sent in chat and create a linked Ticket.
+    
+    Supported formats:
+        /ticket printer Optional extra description...
+        /ticket account ...
+        /ticket device ...
+        /ticket           (uses generic title)
+    """
+    # Only allow ticket creation for active chats that can escalate
+    if not chat.can_escalate():
+        # #region agent log
+        try:
+            from pathlib import Path
+            import json, time
+            log_entry = {
+                "sessionId": "c93079",
+                "runId": "chat-ticket",
+                "hypothesisId": "H2",
+                "location": "chats/views.py:_create_ticket_from_chat_command",
+                "message": "chat.cannot_escalate",
+                "data": {
+                    "chat_id": getattr(chat, "id", None),
+                    "user_id": getattr(user, "id", None),
+                    "command_text": command_text,
+                },
+                "timestamp": int(time.time() * 1000),
+            }
+            log_path = Path("/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log")
+            with log_path.open("a") as f:
+                f.write(json.dumps(log_entry) + "\n")
+        except Exception:
+            pass
+        # #endregion agent log
+        return None
+    if hasattr(chat, 'ticket') and chat.ticket:
+        return chat.ticket
+
+    text = command_text.strip()
+    parts = text.split(None, 2)  # /ticket <category> <rest>
+
+    category = 'general'
+    if len(parts) >= 2:
+        candidate = parts[1].lower()
+        if candidate in ['printer', 'print']:
+            category = 'printer'
+        elif candidate in ['account', 'login', 'password']:
+            category = 'account'
+        elif candidate in ['device', 'promethean', 'board', 'screen']:
+            category = 'device'
+
+    extra_details = ''
+    if len(parts) == 3:
+        extra_details = parts[2].strip()
+    
+    # #region agent log
+    try:
+        from pathlib import Path
+        import json, time
+        log_entry = {
+            "sessionId": "c93079",
+            "runId": "chat-ticket",
+            "hypothesisId": "H2",
+            "location": "chats/views.py:_create_ticket_from_chat_command",
+            "message": "calling_create_ticket_from_chat",
+            "data": {
+                "chat_id": getattr(chat, "id", None),
+                "user_id": getattr(user, "id", None),
+                "category": category,
+                "has_extra_details": bool(extra_details),
+            },
+            "timestamp": int(time.time() * 1000),
+        }
+        log_path = Path("/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log")
+        with log_path.open("a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception:
+        pass
+    # #endregion agent log
+    
+    ticket = create_ticket_from_chat(
+        user=user,
+        school_group=chat.school_group,
+        chat=chat,
+        data={
+            'category': category,
+            'extra_details': extra_details,
+        },
+    )
+
+    # Optionally log the action for auditing
+    # #region agent log
+    try:
+        from pathlib import Path
+        import json, time
+        log_entry = {
+            "sessionId": "c93079",
+            "runId": "chat-ticket",
+            "hypothesisId": "H2",
+            "location": "chats/views.py:_create_ticket_from_chat_command",
+            "message": "ticket_created_from_chat_command",
+            "data": {
+                "chat_id": getattr(chat, "id", None),
+                "user_id": getattr(user, "id", None),
+                "ticket_id": getattr(ticket, "id", None),
+            },
+            "timestamp": int(time.time() * 1000),
+        }
+        log_path = Path("/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log")
+        with log_path.open("a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception:
+        pass
+    # #endregion agent log
+    try:
+        log_action(
+            user,
+            'ticket_created_from_chat_command',
+            'Ticket',
+            ticket.id,
+            chat.school_group,
+            f'Ticket \"{ticket.title}\" created from /ticket command in Chat #{chat.id}',
+        )
+    except Exception:
+        # Logging errors should never break the user flow
+        pass
+
+    return ticket
 
 
 @login_required
@@ -208,23 +380,23 @@ def escalate_chat_view(request, chat_id):
     
     from tickets.forms import EscalateChatForm
     from tickets.models import Ticket
+    from tickets.services import create_ticket_from_chat
     
     if request.method == 'POST':
         form = EscalateChatForm(request.POST)
         if form.is_valid():
-            # Create ticket from chat
-            ticket = Ticket.objects.create(
-                chat=chat,
+            # Create ticket from chat using shared service helper so all
+            # chat‑created tickets are consistent and tagged as chat‑sourced.
+            ticket = create_ticket_from_chat(
                 user=user,
                 school_group=chat.school_group,
-                title=form.cleaned_data['title'],
-                description=form.cleaned_data['description'],
-                priority=form.cleaned_data['priority'],
-                status='open'
+                chat=chat,
+                data={
+                    'short_title': form.cleaned_data['title'],
+                    'full_description': form.cleaned_data['description'],
+                    'priority': form.cleaned_data['priority'],
+                },
             )
-            
-            # Mark chat as escalated
-            chat.escalate()
             
             # Send email notification
             try:

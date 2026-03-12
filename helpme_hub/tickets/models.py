@@ -17,14 +17,20 @@ class Ticket(models.Model):
         ('resolved', 'Resolved'),
         ('closed', 'Closed'),
     ]
-    
+
     PRIORITY_CHOICES = [
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
         ('urgent', 'Urgent'),
     ]
-    
+
+    SOURCE_CHOICES = [
+        ('portal', 'Portal'),
+        ('chat', 'Chat'),
+        ('other', 'Other'),
+    ]
+
     chat = models.OneToOneField(
         'chats.Chat',
         on_delete=models.SET_NULL,
@@ -65,6 +71,12 @@ class Ticket(models.Model):
         choices=STATUS_CHOICES,
         default='open',
         help_text='Current status of the ticket'
+    )
+    source = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES,
+        default='portal',
+        help_text='Where this ticket was created (portal, chat, etc.)'
     )
     priority = models.CharField(
         max_length=20,

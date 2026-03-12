@@ -32,7 +32,8 @@ def create_ticket_view(request):
                 title=form.cleaned_data['title'],
                 description=form.cleaned_data['description'],
                 priority=form.cleaned_data['priority'],
-                status='open'
+                status='open',
+                source='portal',
             )
             
             # Log ticket creation
@@ -41,7 +42,18 @@ def create_ticket_view(request):
             messages.success(request, f'Ticket #{ticket.id} created successfully!')
             return redirect('tickets:ticket_detail', ticket_id=ticket.id)
     else:
-        form = CreateTicketForm()
+        # Support pre-filled initial values from query params for quick tickets
+        initial = {}
+        title_qs = request.GET.get('title')
+        desc_qs = request.GET.get('description')
+        priority_qs = request.GET.get('priority')
+        if title_qs:
+            initial['title'] = title_qs
+        if desc_qs:
+            initial['description'] = desc_qs
+        if priority_qs in dict(Ticket.PRIORITY_CHOICES):
+            initial['priority'] = priority_qs
+        form = CreateTicketForm(initial=initial)
     
     context = {
         'form': form,

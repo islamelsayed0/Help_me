@@ -77,6 +77,57 @@
             </a>
         </div>
     </div>
+
+    <!-- Quick Ticket Templates with Short Steps -->
+    <div class="mb-6 sm:mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-text-primary-light dark:text-text-primary-dark mb-3 sm:mb-4">Common Issues – Quick Tickets</h2>
+        <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-4">
+            Try these short steps first. If it still is not working, use the button to open a ticket in a few seconds.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+            <!-- Printer help -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <h3 class="text-base sm:text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">Printer help</h3>
+                <ol class="list-decimal list-inside text-xs sm:text-sm text-text-secondary-light dark:text-text-secondary-dark space-y-1 mb-3">
+                    <li>Make sure the printer is powered on and has paper.</li>
+                    <li>Check you selected the correct printer on your computer.</li>
+                    <li>Try printing a simple one‑page test document.</li>
+                    <li>If it still will not print, open a ticket below.</li>
+                </ol>
+                <a href="{% url 'tickets:create_ticket' %}?title=Printer%20help&description=User%20needs%20help%20with%20a%20printer%20after%20trying%20basic%20steps." class="inline-flex items-center justify-center px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-xs sm:text-sm font-medium rounded-md transition-colors">
+                    Open printer ticket
+                </a>
+            </div>
+
+            <!-- Account help -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <h3 class="text-base sm:text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">Account / login help</h3>
+                <ol class="list-decimal list-inside text-xs sm:text-sm text-text-secondary-light dark:text-text-secondary-dark space-y-1 mb-3">
+                    <li>Check you are using the correct username or email address.</li>
+                    <li>Try the “forgot password” option if it is available.</li>
+                    <li>Close the browser, reopen it, and try signing in again.</li>
+                    <li>If you still cannot sign in, open a ticket below.</li>
+                </ol>
+                <a href="{% url 'tickets:create_ticket' %}?title=Account%20or%20login%20help&description=User%20cannot%20sign%20in%20after%20trying%20basic%20account%20steps." class="inline-flex items-center justify-center px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-xs sm:text-sm font-medium rounded-md transition-colors">
+                    Open account ticket
+                </a>
+            </div>
+
+            <!-- Device / Promethean help -->
+            <div class="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                <h3 class="text-base sm:text-lg font-semibold text-text-primary-light dark:text-text-primary-dark mb-2">Device / Promethean board</h3>
+                <ol class="list-decimal list-inside text-xs sm:text-sm text-text-secondary-light dark:text-text-secondary-dark space-y-1 mb-3">
+                    <li>Confirm the device and cables are firmly plugged in and powered on.</li>
+                    <li>Check the input/source on the screen or projector.</li>
+                    <li>Turn the device off, wait ten seconds, then turn it back on.</li>
+                    <li>If it is still not working, open a ticket below.</li>
+                </ol>
+                <a href="{% url 'tickets:create_ticket' %}?title=Device%20or%20Promethean%20board%20help&description=User%20needs%20help%20with%20a%20classroom%20device%20after%20trying%20basic%20power%20and%20restart%20steps." class="inline-flex items-center justify-center px-4 py-2 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-xs sm:text-sm font-medium rounded-md transition-colors">
+                    Open device ticket
+                </a>
+            </div>
+        </div>
+    </div>
     
     <!-- Join Another Organization Section -->
     <div class="bg-light-card dark:bg-dark-card rounded-lg p-6 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] mb-6 transition-colors light-card-shadow">

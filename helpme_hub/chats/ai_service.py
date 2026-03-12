@@ -35,6 +35,48 @@ def initialize_gemini():
         return None
 
 
+def detect_ticket_intent(user_message):
+    """
+    Lightweight, rule‑based detector for ticket‑creation intents.
+
+    Returns a small dict when an intent is detected:
+        {
+            'intent': 'create_ticket',
+            'category': 'printer' | 'account' | 'device' | 'general',
+        }
+    or None when no ticket‑related intent is found.
+    """
+    if not user_message:
+        return None
+
+    text = user_message.strip().lower()
+
+    # Core intent phrases – asking explicitly to open/create/submit a ticket.
+    intent_triggers = [
+        "open a ticket",
+        "create a ticket",
+        "submit a ticket",
+        "log a ticket",
+        "raise a ticket",
+    ]
+    if not any(phrase in text for phrase in intent_triggers):
+        return None
+
+    # Category hints based on common words in the same message.
+    category = "general"
+    if any(word in text for word in ["printer", "print"]):
+        category = "printer"
+    elif any(word in text for word in ["login", "password", "account"]):
+        category = "account"
+    elif any(word in text for word in ["device", "promethean", "board", "screen"]):
+        category = "device"
+
+    return {
+        "intent": "create_ticket",
+        "category": category,
+    }
+
+
 def generate_ai_response(chat_id=None, user_message=None, conversation_history=None):
     """
     Generate AI response using Google Gemini.
@@ -62,18 +104,28 @@ def generate_ai_response(chat_id=None, user_message=None, conversation_history=N
         model = genai_client.GenerativeModel(model_name)
         
         # Build conversation context
-        system_prompt = """You are a friendly and patient IT support assistant helping people who may not be very tech-savvy. 
+        system_prompt = """You are a calm, patient IT helper for people with low attention span and very little technical knowledge.
 
-IMPORTANT GUIDELINES:
-- Use simple, everyday language - avoid technical jargon
-- Break down instructions into clear, numbered steps
-- Be encouraging and reassuring - many users are frustrated
-- Ask clarifying questions if needed (e.g., "What exactly happens when you try to print?")
-- For common issues like printers or screens, provide step-by-step troubleshooting
-- If the issue is complex or you're unsure, suggest escalating to a human admin
-- Always be polite and understanding
+STRICT STYLE RULES (ALWAYS FOLLOW THESE):
+- Keep answers short.
+- Start with ONE sentence that says what is probably wrong in plain language.
+- Then give at most 3–4 VERY short numbered steps.
+- Each step must be 1 simple sentence. No long paragraphs.
+- Use everyday words. Avoid technical terms unless there is no simple word.
+- Prefer actions that take less than 1 minute (check power, restart, try another cable, etc.).
+- Never give more than 4 steps at once. If more is needed, say: "If that didn't fix it, tell me and I'll give the next simple steps."
+- When you need information, ask ONE clear yes/no or multiple‑choice question at a time.
+- Never ask the user for their name; assume the system already knows it.
+- If you need contact details, ask for EITHER a room number OR a phone number (not both) in one short question, and only after simple steps fail.
 
-Remember: Many users struggle with technology. Be patient, clear, and helpful."""
+TONE:
+- Friendly, encouraging, never blaming.
+- Assume the user may be stressed or distracted.
+- Good openers: "This sounds frustrating, let's fix it in a few quick steps." or "We'll try a very simple check first."
+
+REMINDER:
+- The goal is a quick, easy fix. Short answer plus a few simple steps is always better than long explanations.
+- Only give detailed explanations if the user explicitly asks for "why" or "more details"."""
         
         # Prepare conversation history
         # Build the prompt with system context (simple string format works with all API versions)

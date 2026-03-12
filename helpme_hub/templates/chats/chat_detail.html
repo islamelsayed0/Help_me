@@ -99,9 +99,53 @@
         <!-- Message Input -->
         {% if chat.status == 'active' %}
             <div class="p-6 border-t border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] bg-light-card-hover dark:bg-dark-card-hover">
-                <div class="mb-3">
+                <div class="mb-4 space-y-3">
                     <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark text-center">
-                        💬 <strong>Type your message below</strong> - Our AI assistant or an admin will help you!
+                        💬 <strong>Type your message below</strong> – Our AI assistant or an admin will help you!
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="bg-light-card dark:bg-dark-card rounded-lg p-3 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                            <h3 class="text-xs font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Printer help</h3>
+                            <ol class="list-decimal list-inside text-[11px] text-text-secondary-light dark:text-text-secondary-dark space-y-0.5 mb-2">
+                                <li>Check the printer is on and has paper.</li>
+                                <li>Make sure you picked the right printer.</li>
+                                <li>Try printing a simple test page.</li>
+                                <li>If it still fails, open a ticket.</li>
+                            </ol>
+                            <button type="button" class="w-full mt-1 px-3 py-1.5 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-[11px] font-medium rounded-md transition-colors"
+                                    onclick="sendQuickTicketCommand('/ticket printer My printer is not working as expected.')">
+                                Open printer ticket from this chat
+                            </button>
+                        </div>
+                        <div class="bg-light-card dark:bg-dark-card rounded-lg p-3 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                            <h3 class="text-xs font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Account / login help</h3>
+                            <ol class="list-decimal list-inside text-[11px] text-text-secondary-light dark:text-text-secondary-dark space-y-0.5 mb-2">
+                                <li>Confirm your username or email is correct.</li>
+                                <li>Try the “forgot password” option.</li>
+                                <li>Close the browser, reopen it, and sign in again.</li>
+                                <li>If you still cannot sign in, open a ticket.</li>
+                            </ol>
+                            <button type="button" class="w-full mt-1 px-3 py-1.5 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-[11px] font-medium rounded-md transition-colors"
+                                    onclick="sendQuickTicketCommand('/ticket account I cannot sign in to my account.')">
+                                Open account ticket from this chat
+                            </button>
+                        </div>
+                        <div class="bg-light-card dark:bg-dark-card rounded-lg p-3 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)]">
+                            <h3 class="text-xs font-semibold text-text-primary-light dark:text-text-primary-dark mb-1">Device / Promethean board</h3>
+                            <ol class="list-decimal list-inside text-[11px] text-text-secondary-light dark:text-text-secondary-dark space-y-0.5 mb-2">
+                                <li>Make sure cables are secure and power is on.</li>
+                                <li>Check the input/source on the screen.</li>
+                                <li>Turn the device off, wait, then turn it back on.</li>
+                                <li>If it still does not work, open a ticket.</li>
+                            </ol>
+                            <button type="button" class="w-full mt-1 px-3 py-1.5 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-[11px] font-medium rounded-md transition-colors"
+                                    onclick="sendQuickTicketCommand('/ticket device My classroom device or Promethean board is not working.')">
+                                Open device ticket from this chat
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-text-muted-light dark:text-text-muted-dark text-center">
+                        Tip: you can also type commands like <code>/ticket printer</code> or <code>/ticket account</code> to open a ticket from this chat.
                     </p>
                 </div>
                 <form method="post" action="{% url 'chats:send_message' chat.id %}" id="message-form">
@@ -234,6 +278,17 @@
                 this.style.height = Math.min(this.scrollHeight, 200) + 'px'; // Max height 200px
             });
         }
+    }
+
+    // Send a pre-filled /ticket command from quick buttons
+    function sendQuickTicketCommand(commandText) {
+        const messageForm = document.getElementById('message-form');
+        const messageTextarea = document.getElementById('id_content');
+        if (!messageForm || !messageTextarea) {
+            return;
+        }
+        messageTextarea.value = commandText;
+        messageForm.submit();
     }
     
     // Set up Enter key submit when DOM is ready

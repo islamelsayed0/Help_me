@@ -6,7 +6,31 @@
 <div class="max-w-2xl mx-auto mt-8">
     <div class="bg-light-card dark:bg-dark-card rounded-lg p-8 border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] transition-colors light-card-shadow">
         <h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark mb-6">Create Support Ticket</h1>
-        
+
+        <!-- Common issues quick-fill buttons -->
+        <div class="mb-5 space-y-2">
+            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                Common issues – tap a button to fill the form for you.
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <button type="button"
+                        class="px-3 py-1.5 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-xs font-medium rounded-md transition-colors"
+                        onclick="fillTicket('Printer help', 'Printer is not printing correctly after checking power, paper, and a simple test page.', 'medium')">
+                    Printer issue
+                </button>
+                <button type="button"
+                        class="px-3 py-1.5 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-xs font-medium rounded-md transition-colors"
+                        onclick="fillTicket('Account or login help', 'Cannot sign in after checking username/email, trying password reset, and restarting the browser.', 'medium')">
+                    Account / login issue
+                </button>
+                <button type="button"
+                        class="px-3 py-1.5 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover text-white text-xs font-medium rounded-md transition-colors"
+                        onclick="fillTicket('Device or Promethean board help', 'Classroom device or Promethean board is not working after checking cables, power, and restarting.', 'medium')">
+                    Device / Promethean issue
+                </button>
+            </div>
+        </div>
+
         <form method="post">
             {% csrf_token %}
             
@@ -68,4 +92,14 @@
         </form>
     </div>
 </div>
+<script>
+    function fillTicket(title, description, priority) {
+        const titleInput = document.getElementById('id_title');
+        const descInput = document.getElementById('id_description');
+        const priorityInput = document.getElementById('id_priority');
+        if (titleInput) titleInput.value = title;
+        if (descInput) descInput.value = description;
+        if (priorityInput) priorityInput.value = priority;
+    }
+</script>
 {% endblock %}

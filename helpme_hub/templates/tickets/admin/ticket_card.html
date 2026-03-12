@@ -15,10 +15,17 @@
     </p>
     <div class="flex items-center justify-between text-xs text-text-muted-light dark:text-text-muted-dark">
         <span>{{ ticket.user.email|truncatechars:20 }}</span>
-        {% if ticket.assigned_to %}
-            <span class="text-light-blue dark:text-calm-blue">{{ ticket.assigned_to.email|truncatechars:15 }}</span>
-        {% else %}
-            <span class="text-warning-text-light dark:text-warning-text">Unassigned</span>
-        {% endif %}
+        <div class="flex items-center gap-2">
+            {% if ticket.source == 'chat' %}
+                <span class="px-2 py-0.5 rounded-full bg-purple-accent/10 text-purple-accent">
+                    From chat
+                </span>
+            {% endif %}
+            {% if ticket.assigned_to %}
+                <span class="text-light-blue dark:text-calm-blue">{{ ticket.assigned_to.email|truncatechars:15 }}</span>
+            {% else %}
+                <span class="text-warning-text-light dark:text-warning-text">Unassigned</span>
+            {% endif %}
+        </div>
     </div>
 </div>
