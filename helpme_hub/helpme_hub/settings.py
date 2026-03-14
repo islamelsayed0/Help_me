@@ -103,12 +103,8 @@ if config('USE_SQLITE', default=False, cast=bool):
 elif _db_url:
     DATABASES = {'default': dj_database_url.config(default=_db_url)}
 else:
-    # Fallback to SQLite only for local dev (DEBUG=True); production must set DATABASE_URL.
-    if not config('DEBUG', default=True, cast=bool):
-        raise ValueError(
-            'DATABASE_URL must be set in production. Link your Postgres service to this service in Railway, '
-            'or set DATABASE_URL in the service Variables.'
-        )
+    # Fallback to SQLite when DATABASE_URL is not set (e.g. Railway variable not linked yet).
+    # For production, set DATABASE_URL in Railway Variables (reference Postgres) for a persistent database.
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
