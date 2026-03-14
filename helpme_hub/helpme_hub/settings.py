@@ -91,7 +91,8 @@ WSGI_APPLICATION = 'helpme_hub.wsgi.application'
 
 # Set USE_SQLITE=1 in .env to use SQLite locally when Railway Postgres is unreachable.
 # In production (DEBUG=False), DATABASE_URL must be set (e.g. by linking Postgres on Railway).
-_db_url = config('DATABASE_URL', default='')
+# Railway may expose the linked Postgres as DATABASE_URL or DATABASE_PRIVATE_URL.
+_db_url = config('DATABASE_URL', default='') or config('DATABASE_PRIVATE_URL', default='')
 if config('USE_SQLITE', default=False, cast=bool):
     DATABASES = {
         'default': {
