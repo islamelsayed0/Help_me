@@ -89,7 +89,9 @@ WSGI_APPLICATION = 'helpme_hub.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Set USE_SQLITE=1 in .env to use SQLite locally when Railway Postgres is unreachable
+# Set USE_SQLITE=1 in .env to use SQLite locally when Railway Postgres is unreachable.
+# In production (DEBUG=False), DATABASE_URL must be set (e.g. by linking Postgres on Railway).
+_db_url = config('DATABASE_URL', default='')
 if config('USE_SQLITE', default=False, cast=bool):
     DATABASES = {
         'default': {
@@ -97,11 +99,20 @@ if config('USE_SQLITE', default=False, cast=bool):
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+elif _db_url:
+    DATABASES = {'default': dj_database_url.config(default=_db_url)}
 else:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=config('DATABASE_URL', default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'))
+    # Fallback to SQLite only for local dev (DEBUG=True); production must set DATABASE_URL.
+    if not config('DEBUG', default=True, cast=bool):
+        raise ValueError(
+            'DATABASE_URL must be set in production. Link your Postgres service to this service in Railway, '
+            'or set DATABASE_URL in the service Variables.'
         )
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
 
 

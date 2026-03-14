@@ -2,9 +2,6 @@ from django.utils import timezone
 
 from .models import Ticket
 from accounts.utils import get_user_school_group
-import json
-import time
-from pathlib import Path
 
 
 def create_ticket_from_chat(*, user, school_group=None, chat=None, data=None):
@@ -46,29 +43,6 @@ def create_ticket_from_chat(*, user, school_group=None, chat=None, data=None):
         else:
             full_description = base
 
-    # #region agent log
-    try:
-        log_entry = {
-            "sessionId": "c93079",
-            "runId": "chat-ticket",
-            "hypothesisId": "H1",
-            "location": "tickets/services.py:create_ticket_from_chat:before_create",
-            "message": "About to create ticket from chat",
-            "data": {
-                "user_id": getattr(user, "id", None),
-                "school_group_id": getattr(school_group, "id", None),
-                "chat_id": getattr(chat, "id", None),
-                "data_keys": sorted(list(data.keys())),
-            },
-            "timestamp": int(time.time() * 1000),
-        }
-        log_path = Path("/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log")
-        with log_path.open("a") as f:
-            f.write(json.dumps(log_entry) + "\n")
-    except Exception:
-        pass
-    # #endregion agent log
-
     ticket = Ticket.objects.create(
         user=user,
         school_group=school_group,
@@ -84,31 +58,6 @@ def create_ticket_from_chat(*, user, school_group=None, chat=None, data=None):
     # consistently even if created in quick succession.
     ticket.updated_at = timezone.now()
     ticket.save(update_fields=["updated_at"])
-
-    # #region agent log
-    try:
-        log_entry = {
-            "sessionId": "c93079",
-            "runId": "chat-ticket",
-            "hypothesisId": "H1",
-            "location": "tickets/services.py:create_ticket_from_chat:after_create",
-            "message": "Ticket created from chat",
-            "data": {
-                "ticket_id": getattr(ticket, "id", None),
-                "user_id": getattr(user, "id", None),
-                "school_group_id": getattr(school_group, "id", None),
-                "chat_id": getattr(chat, "id", None),
-                "priority": ticket.priority,
-                "source": ticket.source,
-            },
-            "timestamp": int(time.time() * 1000),
-        }
-        log_path = Path("/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log")
-        with log_path.open("a") as f:
-            f.write(json.dumps(log_entry) + "\n")
-    except Exception:
-        pass
-    # #endregion agent log
 
     return ticket
 

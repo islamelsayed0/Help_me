@@ -241,29 +241,6 @@ def _create_ticket_from_chat_command(user, chat, command_text):
     """
     # Only allow ticket creation for active chats that can escalate
     if not chat.can_escalate():
-        # #region agent log
-        try:
-            from pathlib import Path
-            import json, time
-            log_entry = {
-                "sessionId": "c93079",
-                "runId": "chat-ticket",
-                "hypothesisId": "H2",
-                "location": "chats/views.py:_create_ticket_from_chat_command",
-                "message": "chat.cannot_escalate",
-                "data": {
-                    "chat_id": getattr(chat, "id", None),
-                    "user_id": getattr(user, "id", None),
-                    "command_text": command_text,
-                },
-                "timestamp": int(time.time() * 1000),
-            }
-            log_path = Path("/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log")
-            with log_path.open("a") as f:
-                f.write(json.dumps(log_entry) + "\n")
-        except Exception:
-            pass
-        # #endregion agent log
         return None
     if hasattr(chat, 'ticket') and chat.ticket:
         return chat.ticket
@@ -284,32 +261,7 @@ def _create_ticket_from_chat_command(user, chat, command_text):
     extra_details = ''
     if len(parts) == 3:
         extra_details = parts[2].strip()
-    
-    # #region agent log
-    try:
-        from pathlib import Path
-        import json, time
-        log_entry = {
-            "sessionId": "c93079",
-            "runId": "chat-ticket",
-            "hypothesisId": "H2",
-            "location": "chats/views.py:_create_ticket_from_chat_command",
-            "message": "calling_create_ticket_from_chat",
-            "data": {
-                "chat_id": getattr(chat, "id", None),
-                "user_id": getattr(user, "id", None),
-                "category": category,
-                "has_extra_details": bool(extra_details),
-            },
-            "timestamp": int(time.time() * 1000),
-        }
-        log_path = Path("/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log")
-        with log_path.open("a") as f:
-            f.write(json.dumps(log_entry) + "\n")
-    except Exception:
-        pass
-    # #endregion agent log
-    
+
     ticket = create_ticket_from_chat(
         user=user,
         school_group=chat.school_group,
@@ -321,29 +273,6 @@ def _create_ticket_from_chat_command(user, chat, command_text):
     )
 
     # Optionally log the action for auditing
-    # #region agent log
-    try:
-        from pathlib import Path
-        import json, time
-        log_entry = {
-            "sessionId": "c93079",
-            "runId": "chat-ticket",
-            "hypothesisId": "H2",
-            "location": "chats/views.py:_create_ticket_from_chat_command",
-            "message": "ticket_created_from_chat_command",
-            "data": {
-                "chat_id": getattr(chat, "id", None),
-                "user_id": getattr(user, "id", None),
-                "ticket_id": getattr(ticket, "id", None),
-            },
-            "timestamp": int(time.time() * 1000),
-        }
-        log_path = Path("/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log")
-        with log_path.open("a") as f:
-            f.write(json.dumps(log_entry) + "\n")
-    except Exception:
-        pass
-    # #endregion agent log
     try:
         log_action(
             user,

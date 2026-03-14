@@ -114,56 +114,20 @@ def login_view(request):
 def register_view(request):
     """User registration view."""
     import logging
-    import json
-    import os
-    from datetime import datetime
     logger = logging.getLogger(__name__)
-    
-    # Debug logging helper
-    def debug_log(location, message, data, hypothesis_id):
-        log_path = '/Users/islamelsayed/Documents/Help Me /.cursor/debug.log'
-        try:
-            log_entry = {
-                "timestamp": int(datetime.now().timestamp() * 1000),
-                "location": location,
-                "message": message,
-                "data": data,
-                "sessionId": "debug-session",
-                "runId": "registration-debug",
-                "hypothesisId": hypothesis_id
-            }
-            with open(log_path, 'a') as f:
-                f.write(json.dumps(log_entry) + '\n')
-        except Exception as e:
-            logger.error(f'Failed to write debug log: {e}')
-    
-    # #region agent log
-    debug_log('register_view:41', 'Function entry', {'method': request.method, 'is_authenticated': request.user.is_authenticated}, 'A')
-    # #endregion
-    
+
     if request.user.is_authenticated:
         return redirect('accounts:dashboard')
     
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
-        # #region agent log
-        debug_log('register_view:46', 'Form validation', {'is_valid': form.is_valid(), 'errors': dict(form.errors) if form.errors else None}, 'B')
-        # #endregion
-        
+
         if form.is_valid():
             try:
                 # Save user to database
-                # #region agent log
-                debug_log('register_view:50', 'Before user.save()', {'email': form.cleaned_data.get('email'), 'has_password1': 'password1' in form.cleaned_data}, 'C')
-                # #endregion
-                
                 user = form.save()
                 logger.info(f'User created successfully: {user.email} (ID: {user.id})')
-                
-                # #region agent log
-                debug_log('register_view:54', 'After user.save()', {'user_id': user.id, 'user_email': user.email, 'username': user.username, 'has_pk': bool(user.pk)}, 'C')
-                # #endregion
-                
+
                 # Verify user was saved
                 if not user.pk:
                     logger.error(f'User save failed - no primary key: {user.email}')
@@ -172,10 +136,6 @@ def register_view(request):
                 
                 # Log in the user
                 try:
-                    # #region agent log
-                    debug_log('register_view:62', 'Before login() call', {'user_id': user.id, 'user_email': user.email, 'session_key_before': request.session.session_key, 'user_authenticated_before': request.user.is_authenticated}, 'A')
-                    # #endregion
-                    
                     # Since UserCreationForm.save() already hashes the password,
                     # we can log in directly with the user object.
                     
@@ -196,50 +156,19 @@ def register_view(request):
                     # SessionMiddleware will save the session when the response is sent
                     login(request, user, backend=backend)
                     logger.info(f'Login called for user: {user.email} (ID: {user.id}, username: {user.username}, session_key: {request.session.session_key})')
-                    
-                    # #region agent log
-                    debug_log('register_view:72', 'After login() call', {
-                        'user_id': user.id,
-                        'request_user_id': request.user.id if hasattr(request.user, 'id') else None,
-                        'request_user_is_authenticated': request.user.is_authenticated,
-                        'request_user_email': request.user.email if hasattr(request.user, 'email') else None,
-                        'session_key_after': request.session.session_key,
-                        'session_exists': bool(request.session.session_key),
-                        'backend': backend
-                    }, 'A')
-                    # #endregion
-                    
+
                     # CRITICAL: Verify login worked immediately
                     # After login(), request.user should be the authenticated user
                     # Django's login() sets request.user immediately, so check right after
                     if not request.user.is_authenticated or request.user.id != user.id:
                         logger.error(f'Login() failed - user not authenticated or ID mismatch after login() call: {user.email}, authenticated={request.user.is_authenticated}, user_id={getattr(request.user, "id", None)}, expected_id={user.id}')
-                        # #region agent log
-                        debug_log('register_view:123', 'Login verification failed', {
-                            'user_id': user.id,
-                            'user_email': user.email,
-                            'request_user_authenticated': request.user.is_authenticated,
-                            'request_user_id': request.user.id if hasattr(request.user, 'id') else None,
-                            'request_user_type': type(request.user).__name__,
-                            'session_key': request.session.session_key
-                        }, 'A')
-                        # #endregion
                         messages.error(request, 'Account created successfully, but automatic login failed. Please log in manually with your credentials.')
                         return redirect('accounts:login')
                     
                     # Login successful - session is automatically saved by SessionMiddleware
                     logger.info(f'User successfully logged in: {user.email} (ID: {user.id})')
                     messages.success(request, 'Registration successful! Welcome to HelpMe Hub.')
-                    
-                    # #region agent log
-                    debug_log('register_view:107', 'Before redirect to pending', {
-                        'redirect_target': 'accounts:pending',
-                        'final_user_id': request.user.id,
-                        'final_authenticated': request.user.is_authenticated,
-                        'session_key': request.session.session_key
-                    }, 'D')
-                    # #endregion
-                    
+
                     # Redirect to pending page since new users don't have membership yet
                     # SessionMiddleware will save the session when the redirect response is sent
                     return redirect('accounts:pending')
@@ -248,14 +177,6 @@ def register_view(request):
                     logger.error(f'Login exception for user {user.email}: {str(e)}', exc_info=True)
                     import traceback
                     logger.error(f'Traceback: {traceback.format_exc()}')
-                    # #region agent log
-                    debug_log('register_view:132', 'Login exception caught', {
-                        'exception_type': type(e).__name__,
-                        'exception_message': str(e),
-                        'user_id': user.id,
-                        'traceback': traceback.format_exc()[:500]
-                    }, 'C')
-                    # #endregion
                     # User account was created, so inform them to log in manually
                     messages.error(request, f'Account created successfully, but an error occurred during login: {str(e)}. Please log in manually.')
                     return redirect('accounts:login')
@@ -283,50 +204,10 @@ def pending_view(request):
     Shows join request status and form to request join.
     Now accessible to users with existing memberships who want to join additional organizations.
     """
-    # Debug logging helper (reuse from register_view)
-    import json
-    import os
-    import logging
-    from datetime import datetime
-    logger = logging.getLogger(__name__)
-    
-    def debug_log(location, message, data, hypothesis_id):
-        log_path = '/Users/islamelsayed/Documents/Help Me /.cursor/debug.log'
-        try:
-            log_entry = {
-                "timestamp": int(datetime.now().timestamp() * 1000),
-                "location": location,
-                "message": message,
-                "data": data,
-                "sessionId": "debug-session",
-                "runId": "registration-debug",
-                "hypothesisId": hypothesis_id
-            }
-            with open(log_path, 'a') as f:
-                f.write(json.dumps(log_entry) + '\n')
-        except Exception as e:
-            logger.error(f'Failed to write debug log: {e}')
-    
-    # #region agent log
-    debug_log('pending_view:222', 'pending_view entry', {
-        'user_is_authenticated': request.user.is_authenticated,
-        'user_id': request.user.id if hasattr(request.user, 'id') and request.user.is_authenticated else None,
-        'user_email': request.user.email if hasattr(request.user, 'email') and request.user.is_authenticated else None,
-        'session_key': request.session.session_key,
-        'session_exists': bool(request.session.session_key)
-    }, 'D')
-    # #endregion
-    
+
     user = request.user
-    
-    # #region agent log
-    debug_log('pending_view:241', 'After assigning request.user', {
-        'user_id': user.id if hasattr(user, 'id') else None,
-        'user_type': type(user).__name__,
-        'user_is_authenticated': user.is_authenticated
-    }, 'E')
-    # #endregion
-    
+
+
     # Get user's pending join requests (all of them)
     pending_requests = JoinRequest.objects.filter(user=user, status='pending').select_related('school_group')
     
@@ -348,15 +229,7 @@ def pending_view(request):
         'can_create_organization': can_create_organization,
         'has_accepted_membership': has_accepted_membership(user),
     }
-    
-    # #region agent log
-    debug_log('pending_view:265', 'Before render', {
-        'context_user_id': context['user'].id if hasattr(context['user'], 'id') else None,
-        'pending_requests_count': pending_requests.count(),
-        'memberships_count': memberships.count()
-    }, 'E')
-    # #endregion
-    
+
     return render(request, 'accounts/pending.html', context)
 
 
