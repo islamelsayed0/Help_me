@@ -45,6 +45,28 @@ def loading_view(request):
 @require_http_methods(['GET', 'POST'])
 def login_view(request):
     """Custom login view that properly handles authentication errors."""
+    # #region agent log
+    import json, time, os
+    try:
+        log_entry = {
+            "sessionId": "c93079",
+            "runId": "login-debug",
+            "hypothesisId": "H1",
+            "location": "accounts/views.py:login_view:entry",
+            "message": "login_view_called",
+            "data": {
+                "method": request.method,
+                "user_is_authenticated": getattr(request.user, "is_authenticated", False),
+            },
+            "timestamp": int(time.time() * 1000),
+        }
+        log_path = "/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log"
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception:
+        pass
+    # #endregion agent log
     if request.user.is_authenticated:
         # Redirect authenticated users appropriately
         if has_accepted_membership(request.user):
@@ -56,32 +78,71 @@ def login_view(request):
         email = request.POST.get('login', '').strip().lower()
         password = request.POST.get('password', '')
         remember = request.POST.get('remember') == 'on'
-        
+
+        # #region agent log
+        try:
+            log_entry = {
+                "sessionId": "c93079",
+                "runId": "login-debug",
+                "hypothesisId": "H2",
+                "location": "accounts/views.py:login_view:post_data",
+                "message": "login_post_received",
+                "data": {
+                    "email_entered": bool(email),
+                    "password_entered": bool(password),
+                    "remember": remember,
+                },
+                "timestamp": int(time.time() * 1000),
+            }
+            log_path = "/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log"
+            with open(log_path, "a") as f:
+                f.write(json.dumps(log_entry) + "\n")
+        except Exception:
+            pass
+        # #endregion agent log
+
         if not email or not password:
             messages.error(request, 'Please enter both email and password.')
         else:
             # Try to get user by email (for email-based authentication)
             try:
                 user_obj = User.objects.get(email=email)
-                
-                # With ACCOUNT_AUTHENTICATION_METHOD = 'email', Allauth expects email as username
-                # Try authentication with email first (for Allauth backend)
-                # Then try with username (for ModelBackend fallback)
+
                 user = authenticate(request, username=email, password=password)
                 if user is None:
-                    # Fallback to username (for ModelBackend)
                     user = authenticate(request, username=user_obj.username, password=password)
-                
+
+                # #region agent log
+                try:
+                    log_entry = {
+                        "sessionId": "c93079",
+                        "runId": "login-debug",
+                        "hypothesisId": "H3",
+                        "location": "accounts/views.py:login_view:auth_result",
+                        "message": "login_auth_result",
+                        "data": {
+                            "email": email,
+                            "user_found": True,
+                            "user_authenticated": user is not None,
+                            "user_active": getattr(user, "is_active", None),
+                        },
+                        "timestamp": int(time.time() * 1000),
+                    }
+                    log_path = "/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log"
+                    with open(log_path, "a") as f:
+                        f.write(json.dumps(log_entry) + "\n")
+                except Exception:
+                    pass
+                # #endregion agent log
+
                 if user is not None and user.is_active:
-                    # User authenticated successfully
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                    
+
                     if not remember:
-                        request.session.set_expiry(0)  # Session expires when browser closes
+                        request.session.set_expiry(0)
                     else:
-                        request.session.set_expiry(86400 * 30)  # 30 days
-                    
-                    # Redirect based on membership status
+                        request.session.set_expiry(86400 * 30)
+
                     if has_accepted_membership(user):
                         messages.success(request, f'Welcome back, {user.email}!')
                         return redirect('accounts:dashboard')
@@ -89,24 +150,18 @@ def login_view(request):
                         messages.success(request, f'Welcome, {user.email}! Please complete your organization membership.')
                         return redirect('accounts:pending')
                 else:
-                    # Authentication failed - wrong password or inactive account
-                    # Check password manually to provide better error message
                     if not user_obj.is_active:
                         messages.error(request, 'This account is inactive. Please contact support.')
                     elif not user_obj.check_password(password):
-                        # Password is incorrect
                         messages.error(request, 'Wrong account information. Please check your email and password and try again.')
                     else:
-                        # Password is correct but authentication still failed - unexpected
                         messages.error(request, 'An authentication error occurred. Please try again or contact support.')
             except User.DoesNotExist:
-                # User doesn't exist
                 messages.error(request, 'Wrong account information. Please check your email and password and try again.')
             except Exception as e:
-                # Unexpected error
                 logger.error(f'Login error: {str(e)}', exc_info=True)
                 messages.error(request, 'An error occurred during login. Please try again.')
-    
+
     return render(request, 'accounts/login.html')
 
 

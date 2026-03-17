@@ -12,26 +12,74 @@ from django.conf import settings
 from django.utils import timezone
 from .models import Chat, ChatMessage
 import logging
+import json
+import os
+import time
 
 logger = logging.getLogger(__name__)
+
+
+def _debug_log(location, message, data, hypothesis_id):
+    """Lightweight debug logger for Gemini issues."""
+    try:
+        log_entry = {
+            "sessionId": "c93079",
+            "runId": "gemini-debug",
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data or {},
+            "timestamp": int(time.time() * 1000),
+        }
+        log_path = "/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log"
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception:
+        # Never let debug logging break the app
+        pass
 
 
 def initialize_gemini():
     """Initialize Google Gemini API client."""
     if genai is None:
         logger.warning('google-generativeai package not available. AI features will not work.')
+        _debug_log(
+            "chats/ai_service.py:initialize_gemini",
+            "genai_import_missing",
+            {"genai_is_none": True},
+            "H1",
+        )
         return None
     
     api_key = getattr(settings, 'GOOGLE_GEMINI_API_KEY', '')
     if not api_key:
         logger.warning('GOOGLE_GEMINI_API_KEY not set. AI features will not work.')
+        _debug_log(
+            "chats/ai_service.py:initialize_gemini",
+            "api_key_missing",
+            {"has_key": False},
+            "H2",
+        )
         return None
     
     try:
         genai.configure(api_key=api_key)
+        _debug_log(
+            "chats/ai_service.py:initialize_gemini",
+            "genai_configured",
+            {"has_key": True},
+            "H2",
+        )
         return genai
     except Exception as e:
         logger.error(f'Failed to initialize Gemini API: {str(e)}')
+        _debug_log(
+            "chats/ai_service.py:initialize_gemini",
+            "genai_config_failed",
+            {"error": str(e)},
+            "H3",
+        )
         return None
 
 
@@ -92,6 +140,12 @@ def generate_ai_response(chat_id=None, user_message=None, conversation_history=N
     # Initialize Gemini
     genai_client = initialize_gemini()
     if not genai_client:
+        _debug_log(
+            "chats/ai_service.py:generate_ai_response",
+            "initialize_gemini_returned_none",
+            {"chat_id": chat_id, "has_message": bool(user_message)},
+            "H4",
+        )
         return None
     
     # Get model configuration
@@ -100,6 +154,12 @@ def generate_ai_response(chat_id=None, user_message=None, conversation_history=N
     temperature = getattr(settings, 'GEMINI_TEMPERATURE', 0.7)
     
     try:
+        _debug_log(
+            "chats/ai_service.py:generate_ai_response",
+            "before_model_init",
+            {"model_name": model_name, "max_tokens": max_tokens, "temperature": temperature},
+            "H5",
+        )
         # Get the model
         model = genai_client.GenerativeModel(model_name)
         
@@ -168,17 +228,35 @@ REMINDER:
             full_prompt,
             generation_config=generation_config
         )
+        _debug_log(
+            "chats/ai_service.py:generate_ai_response",
+            "after_generate_content",
+            {"has_response": bool(response), "has_text": bool(getattr(response, "text", None))},
+            "H6",
+        )
         
         # Extract response text
         if response and response.text:
             return response.text.strip()
         else:
             logger.warning('Empty response from Gemini API')
+            _debug_log(
+                "chats/ai_service.py:generate_ai_response",
+                "empty_response",
+                {},
+                "H6",
+            )
             return None
             
     except Exception as e:
         error_str = str(e)
         logger.error(f'Error generating AI response: {error_str}')
+        _debug_log(
+            "chats/ai_service.py:generate_ai_response",
+            "exception_from_generate_content",
+            {"error": error_str},
+            "H7",
+        )
         
         # Check for quota/billing errors and provide helpful messages
         if '429' in error_str or 'quota' in error_str.lower() or 'billing' in error_str.lower():
