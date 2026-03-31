@@ -1,30 +1,28 @@
-# Django Core
-Django>=4.2,<5.0
+# Django Core (deploy from repo root, e.g. Railway)
+Django==4.2.17
 
 # Database
-psycopg2-binary>=2.9.0
-dj-database-url>=2.1.0
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
 
-# Authentication (requests, PyJWT required by allauth socialaccount providers)
-django-allauth>=0.57.0
-requests>=2.28.0
-PyJWT>=2.0.0
+# Authentication
+django-allauth==0.63.6
+requests==2.32.3
+PyJWT==2.9.0
 
-# Environment Variables
-python-decouple>=3.8
+# Environment
+django-environ==0.11.2
 
-# Production Server
-gunicorn>=21.2.0
+# Production
+gunicorn==22.0.0
+whitenoise==6.6.0
 
-# Static Files
-whitenoise>=6.6.0
+# Security
+django-ratelimit==4.1.0
 
-# Security (recommended)
-django-cors-headers>=4.3.0
-
-# App dependencies (used when deploying from repo root, e.g. Railway)
-google-generativeai>=0.8.0
-stripe>=7.0.0
-markdown>=3.5.0
-Pygments>=2.17.0
-sentry-sdk>=2.15.0
+# App dependencies
+google-generativeai==0.8.6
+stripe==10.12.0
+markdown==3.5.1
+Pygments==2.17.2
+sentry-sdk==2.15.0

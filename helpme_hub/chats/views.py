@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.db.models import Q, Count, Max
 import json
+import logging
 
 from .models import Chat, ChatMessage
 from .forms import CreateChatForm, ChatMessageForm
@@ -17,6 +18,8 @@ from .ai_service import generate_ai_response, process_ai_response, detect_ticket
 from accounts.utils import get_user_school_group, has_accepted_membership
 from audit.utils import log_action
 from tickets.services import create_ticket_from_chat
+
+logger = logging.getLogger(__name__)
 
 
 @login_required

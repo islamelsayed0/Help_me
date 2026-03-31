@@ -1,12 +1,36 @@
-from django.urls import path
+from django.urls import path, re_path
 from django.views.generic import RedirectView
 from django.contrib.auth import views as auth_views
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
+from allauth.account import views as allauth_account_views
+
 from . import views
 from . import admin_views
 
 app_name = 'accounts'
 
+_ratelimit_password_reset = method_decorator(
+    ratelimit(key='ip', rate='5/h', method='POST', block=True),
+    name='dispatch',
+)(allauth_account_views.PasswordResetView)
+
+_ratelimit_password_reset_key = method_decorator(
+    ratelimit(key='ip', rate='20/h', method='POST', block=True),
+    name='dispatch',
+)(allauth_account_views.PasswordResetFromKeyView)
+
 urlpatterns = [
+    path(
+        'password/reset/',
+        _ratelimit_password_reset.as_view(),
+        name='account_reset_password',
+    ),
+    re_path(
+        r'^password/reset/key/(?P<uidb36>[0-9A-Za-z]+)-(?P<key>.+)/$',
+        _ratelimit_password_reset_key.as_view(),
+        name='account_reset_password_from_key',
+    ),
     # Root URL - redirects to loading or dashboard
     path('', views.home_view, name='home'),
     

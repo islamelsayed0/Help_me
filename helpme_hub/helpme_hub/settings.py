@@ -7,21 +7,40 @@ Generated for Phase 1: Foundation
 from pathlib import Path
 import os
 import sys
-from decouple import config
+
 import dj_database_url
+import environ
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
+env = environ.Env()
+environ.Env.read_env(BASE_DIR / '.env')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+if os.environ.get('RAILWAY_ENVIRONMENT', '') == 'production':
+    DEBUG = False
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.up.railway.app').split(',')
+IS_PRODUCTION = (not DEBUG) or (os.environ.get('RAILWAY_ENVIRONMENT', '') == 'production')
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = env.str('SECRET_KEY', default='').strip()
+if IS_PRODUCTION and not SECRET_KEY:
+    raise ImproperlyConfigured(
+        'SECRET_KEY must be set via environment variable in production.'
+    )
+if not SECRET_KEY:
+    SECRET_KEY = 'django-insecure-dev-only-not-for-production'
+
+_allowed = env.str('ALLOWED_HOSTS', default='localhost,127.0.0.1,.up.railway.app')
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
+if '*' in ALLOWED_HOSTS and IS_PRODUCTION:
+    raise ImproperlyConfigured('ALLOWED_HOSTS cannot be "*" in production.')
+
+_csrf_origins = env.str('CSRF_TRUSTED_ORIGINS', default='')
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(',') if o.strip()]
 
 
 # Application definition
@@ -89,11 +108,19 @@ WSGI_APPLICATION = 'helpme_hub.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Set USE_SQLITE=1 in .env to use SQLite locally when Railway Postgres is unreachable.
-# In production (DEBUG=False), DATABASE_URL must be set (e.g. by linking Postgres on Railway).
-# Railway may expose the linked Postgres as DATABASE_URL or DATABASE_PRIVATE_URL.
-_db_url = config('DATABASE_URL', default='') or config('DATABASE_PRIVATE_URL', default='')
-if config('USE_SQLITE', default=False, cast=bool):
+# Set USE_SQLITE=True in .env for local SQLite. Production must use DATABASE_URL from Railway (or similar).
+_db_url = env.str('DATABASE_URL', default='').strip() or env.str('DATABASE_PRIVATE_URL', default='').strip()
+USE_SQLITE = env.bool('USE_SQLITE', default=False)
+
+if IS_PRODUCTION:
+    if USE_SQLITE:
+        raise ImproperlyConfigured('USE_SQLITE must not be enabled in production.')
+    if not _db_url:
+        raise ImproperlyConfigured(
+            'DATABASE_URL or DATABASE_PRIVATE_URL is required in production.'
+        )
+    DATABASES = {'default': dj_database_url.config(default=_db_url)}
+elif USE_SQLITE:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -103,8 +130,6 @@ if config('USE_SQLITE', default=False, cast=bool):
 elif _db_url:
     DATABASES = {'default': dj_database_url.config(default=_db_url)}
 else:
-    # Fallback to SQLite when DATABASE_URL is not set (e.g. Railway variable not linked yet).
-    # For production, set DATABASE_URL in Railway Variables (reference Postgres) for a persistent database.
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -159,12 +184,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = config('STATIC_URL', default='/static/')
+STATIC_URL = env.str('STATIC_URL', default='/static/')
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Media files
-MEDIA_URL = config('MEDIA_URL', default='/media/')
+MEDIA_URL = env.str('MEDIA_URL', default='/media/')
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # WhiteNoise configuration
@@ -191,7 +216,10 @@ AUTHENTICATION_BACKENDS = [
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'none'  # Can be changed to 'mandatory' later
+if DEBUG:
+    ACCOUNT_EMAIL_VERIFICATION = 'none'
+else:
+    ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = False
 ACCOUNT_SESSION_REMEMBER = True
@@ -200,8 +228,8 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Google OAuth Settings
 # Get Google OAuth credentials from environment variables
-GOOGLE_OAUTH2_CLIENT_ID = config('GOOGLE_OAUTH2_CLIENT_ID', default='')
-GOOGLE_OAUTH2_CLIENT_SECRET = config('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
+GOOGLE_OAUTH2_CLIENT_ID = env.str('GOOGLE_OAUTH2_CLIENT_ID', default='')
+GOOGLE_OAUTH2_CLIENT_SECRET = env.str('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
 
 # Validate Google OAuth credentials (only in DEBUG mode to avoid production issues)
 if DEBUG:
@@ -237,61 +265,61 @@ else:
     SOCIALACCOUNT_PROVIDERS = {}
 
 # Google Gemini AI Settings
-GOOGLE_GEMINI_API_KEY = config('GOOGLE_GEMINI_API_KEY', default='')
-GEMINI_MODEL = config('GEMINI_MODEL', default='gemini-2.0-flash')  # Use gemini-2.0-flash (available model)
-GEMINI_MAX_TOKENS = config('GEMINI_MAX_TOKENS', default=300, cast=int)
-GEMINI_TEMPERATURE = config('GEMINI_TEMPERATURE', default=0.7, cast=float)
+GOOGLE_GEMINI_API_KEY = env.str('GOOGLE_GEMINI_API_KEY', default='')
+GEMINI_MODEL = env.str('GEMINI_MODEL', default='gemini-2.0-flash')
+GEMINI_MAX_TOKENS = env.int('GEMINI_MAX_TOKENS', default=300)
+GEMINI_TEMPERATURE = env.float('GEMINI_TEMPERATURE', default=0.7)
 
-# Stripe Settings
-STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='')
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
-STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
-STRIPE_PRICE_ID_PRO_MONTHLY = config('STRIPE_PRICE_ID_PRO_MONTHLY', default='')
-STRIPE_PRICE_ID_PRO_YEARLY = config('STRIPE_PRICE_ID_PRO_YEARLY', default='')
-STRIPE_PRICE_ID_ENTERPRISE = config('STRIPE_PRICE_ID_ENTERPRISE', default='')
-STRIPE_PRICE_ID_AI_ADDON = config('STRIPE_PRICE_ID_AI_ADDON', default='')
+# Stripe Settings (never expose STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET to clients)
+STRIPE_PUBLISHABLE_KEY = env.str('STRIPE_PUBLISHABLE_KEY', default='')
+STRIPE_SECRET_KEY = env.str('STRIPE_SECRET_KEY', default='')
+STRIPE_WEBHOOK_SECRET = env.str('STRIPE_WEBHOOK_SECRET', default='')
+STRIPE_PRICE_ID_PRO_MONTHLY = env.str('STRIPE_PRICE_ID_PRO_MONTHLY', default='')
+STRIPE_PRICE_ID_PRO_YEARLY = env.str('STRIPE_PRICE_ID_PRO_YEARLY', default='')
+STRIPE_PRICE_ID_ENTERPRISE = env.str('STRIPE_PRICE_ID_ENTERPRISE', default='')
+STRIPE_PRICE_ID_AI_ADDON = env.str('STRIPE_PRICE_ID_AI_ADDON', default='')
 
-# Donation link (Support page). Optional; leave empty to hide Donate button.
-DONATION_URL = config('DONATION_URL', default='https://buy.stripe.com/5kQ28qa9sewa60N24s4ZG00')
+# Donation link (Support page). Optional; set DONATION_URL in env to show the button.
+DONATION_URL = env.str('DONATION_URL', default='').strip()
 
 SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+if DEBUG:
+    SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+else:
+    SOCIALACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
 # Email Configuration
 # For local development, use console backend (emails printed to console)
 # For production, configure SMTP settings in .env file
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = config('EMAIL_HOST', default='localhost')
-EMAIL_PORT = config('EMAIL_PORT', default=25, cast=int)
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
-EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='webmaster@localhost')
+EMAIL_BACKEND = env.str('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = env.str('EMAIL_HOST', default='localhost')
+EMAIL_PORT = env.int('EMAIL_PORT', default=25)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
+EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
+EMAIL_HOST_USER = env.str('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env.str('DEFAULT_FROM_EMAIL', default='webmaster@localhost')
 
-# Security Settings
-# Production security settings - automatically enabled when DEBUG=False
+# Baseline security headers (safe in development)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Production TLS / cookies / HSTS (Railway and other HTTPS proxies)
 if not DEBUG:
-    # Force HTTPS
-    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=True)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    
-    # Security headers
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
     SECURE_REFERRER_POLICY = 'same-origin'
-    
-    # HSTS (HTTP Strict Transport Security)
-    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)  # 1 year
+    SECURE_HSTS_SECONDS = env.int('SECURE_HSTS_SECONDS', default=31536000)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    
-    # Proxy settings (for Railway/Heroku)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     USE_X_FORWARDED_HOST = True
     USE_X_FORWARDED_PORT = True
+
+# Rate limiting (django-ratelimit); disabled automatically when RATELIMIT_ENABLE=False
+RATELIMIT_ENABLE = env.bool('RATELIMIT_ENABLE', default=True)
 
 # Logging Configuration
 # In production (e.g. Railway), use only console so we don't rely on writable filesystem
@@ -375,9 +403,9 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Sentry Error Monitoring (Optional)
 # Get your DSN from https://sentry.io/settings/projects/
-SENTRY_DSN = config('SENTRY_DSN', default='')
-SENTRY_ENVIRONMENT = config('SENTRY_ENVIRONMENT', default='development' if DEBUG else 'production')
-SENTRY_TRACES_SAMPLE_RATE = config('SENTRY_TRACES_SAMPLE_RATE', default=0.1, cast=float)  # 10% of transactions
+SENTRY_DSN = env.str('SENTRY_DSN', default='')
+SENTRY_ENVIRONMENT = env.str('SENTRY_ENVIRONMENT', default='development' if DEBUG else 'production')
+SENTRY_TRACES_SAMPLE_RATE = env.float('SENTRY_TRACES_SAMPLE_RATE', default=0.1)
 
 if SENTRY_DSN and not DEBUG:  # Only enable Sentry in production
     import sentry_sdk

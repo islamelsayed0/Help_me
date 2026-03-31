@@ -126,6 +126,11 @@ def assign_ticket_view(request, ticket_id):
     """Admin assigns ticket to themselves or another admin."""
     ticket = get_object_or_404(Ticket, id=ticket_id)
     user = request.user
+
+    if request.POST.get('unassign'):
+        ticket.unassign()
+        messages.success(request, 'Ticket unassigned.')
+        return redirect('tickets:admin_ticket_detail', ticket_id=ticket.id)
     
     user_org = get_user_school_group(user)
     org_admins = User.objects.filter(

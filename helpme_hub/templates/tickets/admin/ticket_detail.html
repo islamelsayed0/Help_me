@@ -51,9 +51,13 @@
                                 {% if ticket.assigned_to %}Reassign{% else %}Assign{% endif %}
                             </button>
                             {% if ticket.assigned_to %}
-                                <a href="{% url 'tickets:assign_ticket' ticket.id %}?unassign=true" class="px-4 py-2 bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark font-medium rounded-md transition-colors">
-                                    Unassign
-                                </a>
+                                <form method="post" action="{% url 'tickets:assign_ticket' ticket.id %}" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="unassign" value="1">
+                                    <button type="submit" class="px-4 py-2 bg-light-card-hover dark:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark font-medium rounded-md transition-colors">
+                                        Unassign
+                                    </button>
+                                </form>
                             {% endif %}
                         </div>
                     </form>

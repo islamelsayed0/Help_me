@@ -102,6 +102,7 @@
                 </div>
                 <form method="post" action="{% url 'accounts:admin_regenerate_access_code' %}" onsubmit="return confirm('Are you sure you want to regenerate the access code? The current code will be invalidated and users will need the new code to join.');">
                     {% csrf_token %}
+                    {% if superadmin_org_id %}<input type="hidden" name="organization_id" value="{{ superadmin_org_id }}">{% endif %}
                     <button type="submit" class="px-6 py-3 bg-warning-text-light dark:bg-warning-text hover:bg-warning-text-light dark:hover:bg-warning-text text-white font-medium rounded-lg transition-colors">
                         Regenerate Access Code
                     </button>
@@ -115,6 +116,9 @@
                 </p>
                 <form method="post" action="{% url 'accounts:admin_regenerate_access_code' %}">
                     {% csrf_token %}
+                    {% if superadmin_org_id %}
+                        <input type="hidden" name="organization_id" value="{{ superadmin_org_id }}">
+                    {% endif %}
                     <button type="submit" class="px-6 py-3 bg-light-blue dark:bg-calm-blue hover:bg-light-blue-hover dark:hover:bg-calm-blue-hover active:bg-light-blue-active active:dark:bg-calm-blue-active text-white font-medium rounded-lg transition-colors">
                         Generate Access Code
                     </button>

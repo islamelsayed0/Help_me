@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Select organization — Access code{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-8 px-4">
+    <h1 class="text-2xl font-bold text-text-primary-light dark:text-text-primary-dark mb-2">Access code</h1>
+    <p class="text-text-secondary-light dark:text-text-secondary-dark mb-6">
+        Superadmin: choose which organization’s access code to view or regenerate.
+    </p>
+    <ul class="space-y-2">
+        {% for org in school_groups %}
+            <li>
+                <a href="{% url 'accounts:admin_access_code' %}?organization_id={{ org.id }}"
+                   class="block px-4 py-3 rounded-lg border border-[rgba(15,23,42,0.10)] dark:border-[rgba(148,163,184,0.15)] bg-light-card dark:bg-dark-card hover:bg-light-card-hover dark:hover:bg-dark-card-hover text-text-primary-light dark:text-text-primary-dark">
+                    {{ org.name }}
+                </a>
+            </li>
+        {% empty %}
+            <li class="text-text-muted-light dark:text-text-muted-dark">No organizations yet.</li>
+        {% endfor %}
+    </ul>
+    <p class="mt-6">
+        <a href="{% url 'accounts:superadmin_schoolgroups' %}" class="text-light-blue dark:text-calm-blue text-sm hover:underline">← All organizations</a>
+    </p>
+</div>
+{% endblock %}

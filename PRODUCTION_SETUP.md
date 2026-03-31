@@ -134,9 +134,9 @@ You need to create 4 products in Stripe Dashboard:
 Add these to your Railway environment variables:
 
 ```env
-# Stripe API Keys (from Step 1)
-STRIPE_PUBLISHABLE_KEY=pk_live_51SoUhZACGLosuIt5yA13DAr9gvSMSAPrLtJdXJ6ofuXyPHCAx6MyaMXcKGli9L2pBTIsOp8iX25rbmqUEgHSM8Ye00QE0l0PBN
-STRIPE_SECRET_KEY=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
+# Stripe API Keys (from Step 1) — use your own keys; never commit real values
+STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+STRIPE_SECRET_KEY=sk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # Stripe Webhook Secret (from Step 3)
 STRIPE_WEBHOOK_SECRET=whsec_...

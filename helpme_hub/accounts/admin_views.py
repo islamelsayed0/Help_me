@@ -2,6 +2,7 @@
 Admin views for managing join requests and organization memberships.
 """
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
@@ -200,14 +201,20 @@ def view_access_code_view(request):
     """
     user = request.user
     
-    # Get admin's organization
     if user.is_superadmin():
-        # Superadmins can view any organization's code, but for now, get first one
-        # In future, could add organization selector
-        organization = SchoolGroup.objects.first()
-        if not organization:
-            messages.error(request, 'No organizations found.')
-            return redirect('accounts:dashboard')
+        org_id = (request.GET.get('organization_id') or '').strip()
+        if not org_id:
+            school_groups = SchoolGroup.objects.order_by('name')[:500]
+            return render(
+                request,
+                'accounts/admin/access_code_pick_org.html',
+                {'school_groups': school_groups},
+            )
+        try:
+            organization = SchoolGroup.objects.get(pk=int(org_id))
+        except (ValueError, SchoolGroup.DoesNotExist):
+            messages.error(request, 'Organization not found.')
+            return redirect('accounts:superadmin_schoolgroups')
     else:
         organization = get_user_school_group(user)
         if not organization:
@@ -226,11 +233,11 @@ def view_access_code_view(request):
     context = {
         'organization': organization,
         'access_code': formatted_code,
-        'access_code_raw': organization.access_code,  # Keep raw code for copy functionality
         'generated_at': organization.access_code_generated_at,
         'expires_at': organization.access_code_expires_at,
         'days_until_expiry': days_until_expiry,
         'is_valid': organization.is_access_code_valid() if organization.access_code else False,
+        'superadmin_org_id': organization.id if user.is_superadmin() else None,
     }
     
     return render(request, 'accounts/admin/access_code.html', context)
@@ -246,13 +253,16 @@ def regenerate_access_code_view(request):
     """
     user = request.user
     
-    # Get admin's organization
     if user.is_superadmin():
-        # Superadmins can regenerate any organization's code, but for now, get first one
-        organization = SchoolGroup.objects.first()
-        if not organization:
-            messages.error(request, 'No organizations found.')
-            return redirect('accounts:dashboard')
+        org_id = (request.POST.get('organization_id') or '').strip()
+        if not org_id:
+            messages.error(request, 'Missing organization. Choose an organization first.')
+            return redirect('accounts:admin_access_code')
+        try:
+            organization = SchoolGroup.objects.get(pk=int(org_id))
+        except (ValueError, SchoolGroup.DoesNotExist):
+            messages.error(request, 'Organization not found.')
+            return redirect('accounts:superadmin_schoolgroups')
     else:
         organization = get_user_school_group(user)
         if not organization:
@@ -268,9 +278,15 @@ def regenerate_access_code_view(request):
             f'Access code regenerated successfully. Old code "{old_code_formatted}" is now invalid. '
             f'New code: "{new_code_formatted}"'
         )
-    except Exception as e:
-        messages.error(request, f'Failed to regenerate access code: {str(e)}')
+    except Exception:
+        logger.exception('regenerate_access_code failed')
+        messages.error(request, 'Failed to regenerate access code. Please try again.')
     
+    if user.is_superadmin():
+        return redirect(
+            f"{reverse('accounts:admin_access_code')}?organization_id={organization.id}"
+        )
+
     return redirect('accounts:admin_access_code')
 
 

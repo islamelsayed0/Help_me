@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.cache import never_cache
+from django_ratelimit.decorators import ratelimit
 from django.db import models
 from django.conf import settings
 import logging
@@ -40,33 +41,12 @@ def loading_view(request):
     return render(request, 'loading.html')
 
 
+@ratelimit(key='ip', rate='30/m', method='POST', block=True)
 @never_cache
 @csrf_protect
 @require_http_methods(['GET', 'POST'])
 def login_view(request):
     """Custom login view that properly handles authentication errors."""
-    # #region agent log
-    import json, time, os
-    try:
-        log_entry = {
-            "sessionId": "c93079",
-            "runId": "login-debug",
-            "hypothesisId": "H1",
-            "location": "accounts/views.py:login_view:entry",
-            "message": "login_view_called",
-            "data": {
-                "method": request.method,
-                "user_is_authenticated": getattr(request.user, "is_authenticated", False),
-            },
-            "timestamp": int(time.time() * 1000),
-        }
-        log_path = "/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log"
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        with open(log_path, "a") as f:
-            f.write(json.dumps(log_entry) + "\n")
-    except Exception:
-        pass
-    # #endregion agent log
     if request.user.is_authenticated:
         # Redirect authenticated users appropriately
         if has_accepted_membership(request.user):
@@ -79,28 +59,6 @@ def login_view(request):
         password = request.POST.get('password', '')
         remember = request.POST.get('remember') == 'on'
 
-        # #region agent log
-        try:
-            log_entry = {
-                "sessionId": "c93079",
-                "runId": "login-debug",
-                "hypothesisId": "H2",
-                "location": "accounts/views.py:login_view:post_data",
-                "message": "login_post_received",
-                "data": {
-                    "email_entered": bool(email),
-                    "password_entered": bool(password),
-                    "remember": remember,
-                },
-                "timestamp": int(time.time() * 1000),
-            }
-            log_path = "/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log"
-            with open(log_path, "a") as f:
-                f.write(json.dumps(log_entry) + "\n")
-        except Exception:
-            pass
-        # #endregion agent log
-
         if not email or not password:
             messages.error(request, 'Please enter both email and password.')
         else:
@@ -111,29 +69,6 @@ def login_view(request):
                 user = authenticate(request, username=email, password=password)
                 if user is None:
                     user = authenticate(request, username=user_obj.username, password=password)
-
-                # #region agent log
-                try:
-                    log_entry = {
-                        "sessionId": "c93079",
-                        "runId": "login-debug",
-                        "hypothesisId": "H3",
-                        "location": "accounts/views.py:login_view:auth_result",
-                        "message": "login_auth_result",
-                        "data": {
-                            "email": email,
-                            "user_found": True,
-                            "user_authenticated": user is not None,
-                            "user_active": getattr(user, "is_active", None),
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    }
-                    log_path = "/Users/islamelsayed/Documents/Help Me /.cursor/debug-c93079.log"
-                    with open(log_path, "a") as f:
-                        f.write(json.dumps(log_entry) + "\n")
-                except Exception:
-                    pass
-                # #endregion agent log
 
                 if user is not None and user.is_active:
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
@@ -158,19 +93,19 @@ def login_view(request):
                         messages.error(request, 'An authentication error occurred. Please try again or contact support.')
             except User.DoesNotExist:
                 messages.error(request, 'Wrong account information. Please check your email and password and try again.')
-            except Exception as e:
-                logger.error(f'Login error: {str(e)}', exc_info=True)
+            except Exception:
+                logger.exception('Login error')
                 messages.error(request, 'An error occurred during login. Please try again.')
 
     return render(request, 'accounts/login.html')
 
 
+@ratelimit(key='ip', rate='10/h', method='POST', block=True)
+@never_cache
+@csrf_protect
 @require_http_methods(['GET', 'POST'])
 def register_view(request):
     """User registration view."""
-    import logging
-    logger = logging.getLogger(__name__)
-
     if request.user.is_authenticated:
         return redirect('accounts:dashboard')
     
@@ -179,71 +114,50 @@ def register_view(request):
 
         if form.is_valid():
             try:
-                # Save user to database
                 user = form.save()
-                logger.info(f'User created successfully: {user.email} (ID: {user.id})')
+                logger.info('User created successfully id=%s', user.pk)
 
-                # Verify user was saved
                 if not user.pk:
-                    logger.error(f'User save failed - no primary key: {user.email}')
+                    logger.error('User save failed - no primary key')
                     messages.error(request, 'Account creation failed. Please try again.')
                     return render(request, 'accounts/register.html', {'form': form})
-                
-                # Log in the user
+
                 try:
-                    # Since UserCreationForm.save() already hashes the password,
-                    # we can log in directly with the user object.
-                    
-                    # Ensure user has valid id before logging in
                     if not user.id:
-                        logger.error(f'Cannot login user without ID: {user.email}')
+                        logger.error('Cannot login user without ID')
                         messages.error(request, 'Account creation failed. Please try again.')
                         return render(request, 'accounts/register.html', {'form': form})
-                    
-                    # Use ModelBackend which is the first backend in AUTHENTICATION_BACKENDS
+
                     backend = 'django.contrib.auth.backends.ModelBackend'
-                    
-                    # Log in the user - this sets request.user and persists it in the session
-                    # Django's login() function:
-                    # 1. Sets request.user to the authenticated user
-                    # 2. Stores auth data in session (_auth_user_id, _auth_user_backend)
-                    # 3. Marks session as modified
-                    # SessionMiddleware will save the session when the response is sent
                     login(request, user, backend=backend)
-                    logger.info(f'Login called for user: {user.email} (ID: {user.id}, username: {user.username}, session_key: {request.session.session_key})')
+                    logger.info('Post-registration login session established for user id=%s', user.id)
 
-                    # CRITICAL: Verify login worked immediately
-                    # After login(), request.user should be the authenticated user
-                    # Django's login() sets request.user immediately, so check right after
                     if not request.user.is_authenticated or request.user.id != user.id:
-                        logger.error(f'Login() failed - user not authenticated or ID mismatch after login() call: {user.email}, authenticated={request.user.is_authenticated}, user_id={getattr(request.user, "id", None)}, expected_id={user.id}')
-                        messages.error(request, 'Account created successfully, but automatic login failed. Please log in manually with your credentials.')
+                        logger.error('Login failed after registration: authenticated=%s', request.user.is_authenticated)
+                        messages.error(
+                            request,
+                            'Account created successfully, but automatic login failed. Please log in manually.',
+                        )
                         return redirect('accounts:login')
-                    
-                    # Login successful - session is automatically saved by SessionMiddleware
-                    logger.info(f'User successfully logged in: {user.email} (ID: {user.id})')
-                    messages.success(request, 'Registration successful! Welcome to HelpMe Hub.')
 
-                    # Redirect to pending page since new users don't have membership yet
-                    # SessionMiddleware will save the session when the redirect response is sent
+                    logger.info('User successfully logged in after registration id=%s', user.id)
+                    messages.success(request, 'Registration successful! Welcome to HelpMe Hub.')
                     return redirect('accounts:pending')
-                        
-                except Exception as e:
-                    logger.error(f'Login exception for user {user.email}: {str(e)}', exc_info=True)
-                    import traceback
-                    logger.error(f'Traceback: {traceback.format_exc()}')
-                    # User account was created, so inform them to log in manually
-                    messages.error(request, f'Account created successfully, but an error occurred during login: {str(e)}. Please log in manually.')
+
+                except Exception:
+                    logger.exception('Login exception after registration')
+                    messages.error(
+                        request,
+                        'Account created successfully, but automatic login failed. Please log in manually.',
+                    )
                     return redirect('accounts:login')
-                    
-            except Exception as e:
-                logger.error(f'Registration error: {str(e)}', exc_info=True)
-                messages.error(request, f'An error occurred during registration: {str(e)}. Please try again.')
-                # Re-render form with errors
+
+            except Exception:
+                logger.exception('Registration error')
+                messages.error(request, 'An error occurred during registration. Please try again.')
                 return render(request, 'accounts/register.html', {'form': form})
         else:
-            # Form validation failed - display errors on registration page
-            logger.warning(f'Registration form validation failed: {form.errors}')
+            logger.warning('Registration form validation failed: %s', form.errors)
             messages.error(request, 'Please correct the errors below.')
     else:
         form = UserRegistrationForm()

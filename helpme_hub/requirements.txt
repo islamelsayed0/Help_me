@@ -1,24 +1,30 @@
-# Core (requests, PyJWT required by django-allauth socialaccount)
-Django>=4.2
-gunicorn
-whitenoise
-requests>=2.28.0
-PyJWT>=2.0.0
+# Core
+Django==4.2.17
+gunicorn==22.0.0
+whitenoise==6.6.0
+requests==2.32.3
+PyJWT==2.9.0
+
+# Auth
+django-allauth==0.63.6
+
+# Config & DB
+django-environ==0.11.2
+dj-database-url==2.1.0
+psycopg2-binary==2.9.9
+
+# Security / limits
+django-ratelimit==4.1.0
 
 # AI
 google-generativeai==0.8.6
 
-# Database
-psycopg2-binary==2.9.9
-dj-database-url==2.1.0
-python-decouple==3.8
+# Payments
+stripe==10.12.0
 
-# Payment Processing
-stripe==7.8.0
-
-# Markdown Rendering
+# Content
 markdown==3.5.1
 Pygments==2.17.2
 
-# Error Monitoring & Performance
+# Monitoring
 sentry-sdk==2.15.0

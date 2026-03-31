@@ -176,6 +176,10 @@ cython_debug/
 # Cursor (editor state, debug logs, chat - do not commit)
 .cursor/
 .cursorignore
+.cursorrules
 .cursorindexingignore
 .env.bak
-.env.bak
+
+# macOS
+**/.DS_Store
+.DS_Store

@@ -438,3 +438,20 @@ class JoinRequest(models.Model):
             )
         
         return self
+
+
+class StripeWebhookEvent(models.Model):
+    """Processed Stripe webhook events for idempotency (at-most-once handling)."""
+
+    stripe_event_id = models.CharField(max_length=255, unique=True, db_index=True)
+    event_type = models.CharField(max_length=255, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Stripe webhook event'
+        verbose_name_plural = 'Stripe webhook events'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.stripe_event_id
