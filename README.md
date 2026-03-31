@@ -9,7 +9,6 @@ HelpMe Hub is a role based IT support portal that provides self service help, li
 ## Features
 
 ### Core Functionality
-- **School Group Based Access** - Data isolation by school groups
 - **Role Based Access Control** - Three roles: User, Admin, Superadmin
 - **Chat First Support** - Users start with chat, escalate to tickets when needed
 - **Ticket Management** - Kanban board for admins to manage tickets
