@@ -5,8 +5,11 @@ Generated for Phase 1: Foundation
 """
 
 from pathlib import Path
+import json
 import os
 import sys
+import time
+from urllib.parse import quote_plus
 
 import dj_database_url
 import environ
@@ -109,15 +112,96 @@ WSGI_APPLICATION = 'helpme_hub.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # Set USE_SQLITE=True in .env for local SQLite. Production must use DATABASE_URL from Railway (or similar).
-_db_url = env.str('DATABASE_URL', default='').strip() or env.str('DATABASE_PRIVATE_URL', default='').strip()
+
+
+def _database_url_from_pg_env():
+    """Build postgres URL from PG* vars (e.g. Railway/Heroku-style split credentials)."""
+    host = os.environ.get('PGHOST', '').strip()
+    port = os.environ.get('PGPORT', '').strip() or '5432'
+    user = os.environ.get('PGUSER', '').strip()
+    password = os.environ.get('PGPASSWORD', '')
+    name = os.environ.get('PGDATABASE', '').strip()
+    if not (host and user and name):
+        return ''
+    return (
+        f'postgresql://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{name}'
+    )
+
+
+def _resolve_database_url():
+    """Prefer DATABASE_URL / DATABASE_PRIVATE_URL; else PG* composite (Railway)."""
+    direct = env.str('DATABASE_URL', default='').strip() or env.str(
+        'DATABASE_PRIVATE_URL', default=''
+    ).strip()
+    if direct:
+        return direct, 'env_url'
+    built = _database_url_from_pg_env()
+    if built:
+        return built, 'pg_env'
+    return '', 'none'
+
+
+_db_url, _db_url_source = _resolve_database_url()
 USE_SQLITE = env.bool('USE_SQLITE', default=False)
+
+# region agent log
+def _agent_log_db(hypothesis_id, message, data):
+    payload = {
+        'sessionId': '51bc6f',
+        'hypothesisId': hypothesis_id,
+        'location': 'helpme_hub/settings.py:database',
+        'message': message,
+        'data': data,
+        'timestamp': int(time.time() * 1000),
+    }
+    try:
+        log_path = BASE_DIR.parent / '.cursor' / 'debug-51bc6f.log'
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(payload) + '\n')
+    except Exception:
+        pass
+
+
+_agent_log_db(
+    'H1',
+    'db_url_resolution',
+    {
+        'is_production': IS_PRODUCTION,
+        'use_sqlite': USE_SQLITE,
+        'db_url_source': _db_url_source,
+        'has_nonempty_db_url': bool(_db_url),
+        'has_DATABASE_URL': bool(os.environ.get('DATABASE_URL', '').strip()),
+        'has_DATABASE_PRIVATE_URL': bool(os.environ.get('DATABASE_PRIVATE_URL', '').strip()),
+        'has_PGHOST': bool(os.environ.get('PGHOST', '').strip()),
+        'has_PGDATABASE': bool(os.environ.get('PGDATABASE', '').strip()),
+    },
+)
+# endregion
 
 if IS_PRODUCTION:
     if USE_SQLITE:
         raise ImproperlyConfigured('USE_SQLITE must not be enabled in production.')
     if not _db_url:
+        # region agent log
+        diag = {
+            'has_DATABASE_URL': bool(os.environ.get('DATABASE_URL', '').strip()),
+            'has_DATABASE_PRIVATE_URL': bool(os.environ.get('DATABASE_PRIVATE_URL', '').strip()),
+            'has_PGHOST': bool(os.environ.get('PGHOST', '').strip()),
+            'has_PGUSER': bool(os.environ.get('PGUSER', '').strip()),
+            'has_PGDATABASE': bool(os.environ.get('PGDATABASE', '').strip()),
+            'has_PGPASSWORD': bool(os.environ.get('PGPASSWORD', '').strip()),
+        }
+        _agent_log_db('H2', 'production_missing_db_url', diag)
+        # One-shot stderr (Django may load settings more than once per process)
+        if not os.environ.get('__HELPME_DB_DIAG_STDERR__'):
+            os.environ['__HELPME_DB_DIAG_STDERR__'] = '1'
+            sys.stderr.write('DJANGO_DB_DIAG ' + json.dumps(diag) + '\n')
+        # endregion
         raise ImproperlyConfigured(
-            'DATABASE_URL or DATABASE_PRIVATE_URL is required in production.'
+            'DATABASE_URL or DATABASE_PRIVATE_URL is required in production. '
+            'On Railway: add a PostgreSQL service and reference DATABASE_URL (or PGHOST/PGUSER/'
+            'PGPASSWORD/PGDATABASE) on this service.'
         )
     DATABASES = {'default': dj_database_url.config(default=_db_url)}
 elif USE_SQLITE:
