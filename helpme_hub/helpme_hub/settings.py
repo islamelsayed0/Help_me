@@ -128,16 +128,29 @@ def _database_url_from_pg_env():
     )
 
 
+def _database_url_has_hostname(url):
+    """True when URL has a TCP host (not socket-only postgresql:///db)."""
+    if not url:
+        return False
+    norm = url.replace('postgres://', 'postgresql://', 1).split('?', 1)[0]
+    return bool(urlparse(norm).hostname)
+
+
 def _resolve_database_url():
-    """Prefer DATABASE_URL / DATABASE_PRIVATE_URL; else PG* composite (Railway)."""
+    """Prefer DATABASE_URL / DATABASE_PRIVATE_URL if they include a host; else PG* composite."""
     direct = env.str('DATABASE_URL', default='').strip() or env.str(
         'DATABASE_PRIVATE_URL', default=''
     ).strip()
+    built = _database_url_from_pg_env()
+    if direct and _database_url_has_hostname(direct):
+        return direct, 'env_url'
+    # Socket-only or broken DATABASE_URL is common; Railway still exposes PGHOST, etc.
+    if built:
+        if direct and not _database_url_has_hostname(direct):
+            return built, 'pg_env_fallback'
+        return built, 'pg_env'
     if direct:
         return direct, 'env_url'
-    built = _database_url_from_pg_env()
-    if built:
-        return built, 'pg_env'
     return '', 'none'
 
 
@@ -204,13 +217,13 @@ if IS_PRODUCTION:
             'PGPASSWORD/PGDATABASE) on this service.'
         )
     # Host-less URLs make libpq use a Unix socket inside the container (fails on Railway).
-    _norm_url = _db_url.replace('postgres://', 'postgresql://', 1).split('?', 1)[0]
-    _parsed_db = urlparse(_norm_url)
-    if not _parsed_db.hostname:
+    if not _database_url_has_hostname(_db_url):
         raise ImproperlyConfigured(
-            'DATABASE_URL must include a database host (e.g. …@postgres.railway.internal:5432/railway). '
+            'DATABASE_URL must include a database host (e.g. …@postgres.railway.internal:5432/railway), '
+            'or set PGHOST, PGUSER, PGPASSWORD, and PGDATABASE on this service. '
             'Socket-only URLs like postgresql:///dbname do not work on Railway. '
-            'Copy the full DATABASE_URL from your Railway Postgres service Variables tab.'
+            'Copy the full DATABASE_URL from your Railway Postgres service Variables tab, '
+            'or reference those PG* variables from Postgres onto the web service.'
         )
     DATABASES = {'default': dj_database_url.config(default=_db_url)}
 elif USE_SQLITE:
