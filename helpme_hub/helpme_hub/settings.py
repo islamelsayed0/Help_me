@@ -5,10 +5,8 @@ Generated for Phase 1: Foundation
 """
 
 from pathlib import Path
-import json
 import os
 import sys
-import time
 from urllib.parse import quote_plus, urlparse
 
 import dj_database_url
@@ -136,94 +134,49 @@ def _database_url_has_hostname(url):
     return bool(urlparse(norm).hostname)
 
 
+def _railway_database_url_candidates():
+    """Ordered list of (env_key, value) for Railway-style URL vars (no secrets logged elsewhere)."""
+    keys = ('DATABASE_URL', 'DATABASE_PRIVATE_URL', 'DATABASE_PUBLIC_URL')
+    return [(k, env.str(k, default='').strip()) for k in keys]
+
+
 def _resolve_database_url():
-    """Prefer DATABASE_URL / DATABASE_PRIVATE_URL if they include a host; else PG* composite."""
-    direct = env.str('DATABASE_URL', default='').strip() or env.str(
-        'DATABASE_PRIVATE_URL', default=''
-    ).strip()
+    """Use first URL var that includes a host; else PG* composite (Railway references)."""
+    candidates = _railway_database_url_candidates()
+    for _key, url in candidates:
+        if url and _database_url_has_hostname(url):
+            return url, 'env_url'
+
     built = _database_url_from_pg_env()
-    if direct and _database_url_has_hostname(direct):
-        return direct, 'env_url'
-    # Socket-only or broken DATABASE_URL is common; Railway still exposes PGHOST, etc.
+    bad_direct = any(u for _k, u in candidates if u and not _database_url_has_hostname(u))
     if built:
-        if direct and not _database_url_has_hostname(direct):
-            return built, 'pg_env_fallback'
-        return built, 'pg_env'
-    if direct:
-        return direct, 'env_url'
+        return built, 'pg_env_fallback' if bad_direct else 'pg_env'
+
+    direct_any = next((u for _k, u in candidates if u), '')
+    if direct_any:
+        return direct_any, 'env_url'
     return '', 'none'
 
 
-_db_url, _db_url_source = _resolve_database_url()
+_db_url, _ = _resolve_database_url()
 USE_SQLITE = env.bool('USE_SQLITE', default=False)
-
-# region agent log
-def _agent_log_db(hypothesis_id, message, data):
-    payload = {
-        'sessionId': '51bc6f',
-        'hypothesisId': hypothesis_id,
-        'location': 'helpme_hub/settings.py:database',
-        'message': message,
-        'data': data,
-        'timestamp': int(time.time() * 1000),
-    }
-    try:
-        log_path = BASE_DIR.parent / '.cursor' / 'debug-51bc6f.log'
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps(payload) + '\n')
-    except Exception:
-        pass
-
-
-_agent_log_db(
-    'H1',
-    'db_url_resolution',
-    {
-        'is_production': IS_PRODUCTION,
-        'use_sqlite': USE_SQLITE,
-        'db_url_source': _db_url_source,
-        'has_nonempty_db_url': bool(_db_url),
-        'has_DATABASE_URL': bool(os.environ.get('DATABASE_URL', '').strip()),
-        'has_DATABASE_PRIVATE_URL': bool(os.environ.get('DATABASE_PRIVATE_URL', '').strip()),
-        'has_PGHOST': bool(os.environ.get('PGHOST', '').strip()),
-        'has_PGDATABASE': bool(os.environ.get('PGDATABASE', '').strip()),
-    },
-)
-# endregion
 
 if IS_PRODUCTION:
     if USE_SQLITE:
         raise ImproperlyConfigured('USE_SQLITE must not be enabled in production.')
     if not _db_url:
-        # region agent log
-        diag = {
-            'has_DATABASE_URL': bool(os.environ.get('DATABASE_URL', '').strip()),
-            'has_DATABASE_PRIVATE_URL': bool(os.environ.get('DATABASE_PRIVATE_URL', '').strip()),
-            'has_PGHOST': bool(os.environ.get('PGHOST', '').strip()),
-            'has_PGUSER': bool(os.environ.get('PGUSER', '').strip()),
-            'has_PGDATABASE': bool(os.environ.get('PGDATABASE', '').strip()),
-            'has_PGPASSWORD': bool(os.environ.get('PGPASSWORD', '').strip()),
-        }
-        _agent_log_db('H2', 'production_missing_db_url', diag)
-        # One-shot stderr (Django may load settings more than once per process)
-        if not os.environ.get('__HELPME_DB_DIAG_STDERR__'):
-            os.environ['__HELPME_DB_DIAG_STDERR__'] = '1'
-            sys.stderr.write('DJANGO_DB_DIAG ' + json.dumps(diag) + '\n')
-        # endregion
         raise ImproperlyConfigured(
-            'DATABASE_URL or DATABASE_PRIVATE_URL is required in production. '
-            'On Railway: add a PostgreSQL service and reference DATABASE_URL (or PGHOST/PGUSER/'
-            'PGPASSWORD/PGDATABASE) on this service.'
+            'A database connection is required in production. '
+            'On Railway: reference Postgres DATABASE_URL, DATABASE_PRIVATE_URL, or '
+            'DATABASE_PUBLIC_URL (or PGHOST/PGUSER/PGPASSWORD/PGDATABASE/PGPORT) onto this web service.'
         )
     # Host-less URLs make libpq use a Unix socket inside the container (fails on Railway).
     if not _database_url_has_hostname(_db_url):
         raise ImproperlyConfigured(
-            'DATABASE_URL must include a database host (e.g. …@postgres.railway.internal:5432/railway), '
-            'or set PGHOST, PGUSER, PGPASSWORD, and PGDATABASE on this service. '
-            'Socket-only URLs like postgresql:///dbname do not work on Railway. '
-            'Copy the full DATABASE_URL from your Railway Postgres service Variables tab, '
-            'or reference those PG* variables from Postgres onto the web service.'
+            'Database URL must include a host. Set DATABASE_URL, DATABASE_PRIVATE_URL, or '
+            'DATABASE_PUBLIC_URL to a full postgresql://…@HOST:PORT/… value from Postgres, '
+            'or reference PGHOST, PGUSER, PGPASSWORD, PGDATABASE (and PGPORT) from Postgres '
+            'onto this service. Socket-only URLs do not work on Railway.'
         )
     DATABASES = {'default': dj_database_url.config(default=_db_url)}
 elif USE_SQLITE:
