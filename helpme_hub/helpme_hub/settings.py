@@ -7,7 +7,7 @@ Generated for Phase 1: Foundation
 from pathlib import Path
 import os
 import sys
-from urllib.parse import quote_plus, urlparse
+from urllib.parse import quote_plus
 
 import dj_database_url
 import environ
@@ -127,11 +127,15 @@ def _database_url_from_pg_env():
 
 
 def _database_url_has_hostname(url):
-    """True when URL has a TCP host (not socket-only postgresql:///db)."""
+    """True when parsed config has HOST (avoids socket-only postgresql:///db)."""
     if not url:
         return False
-    norm = url.replace('postgres://', 'postgresql://', 1).split('?', 1)[0]
-    return bool(urlparse(norm).hostname)
+    try:
+        cfg = dj_database_url.parse(url)
+    except (ValueError, TypeError):
+        return False
+    host = (cfg.get('HOST') or '').strip()
+    return bool(host)
 
 
 def _railway_database_url_candidates():
@@ -152,9 +156,7 @@ def _resolve_database_url():
     if built:
         return built, 'pg_env_fallback' if bad_direct else 'pg_env'
 
-    direct_any = next((u for _k, u in candidates if u), '')
-    if direct_any:
-        return direct_any, 'env_url'
+    # Do not return host-less URLs: they make psycopg2 use /var/run/postgresql sockets.
     return '', 'none'
 
 
@@ -165,18 +167,24 @@ if IS_PRODUCTION:
     if USE_SQLITE:
         raise ImproperlyConfigured('USE_SQLITE must not be enabled in production.')
     if not _db_url:
+        hostless = [
+            k
+            for k, u in _railway_database_url_candidates()
+            if u and not _database_url_has_hostname(u)
+        ]
+        if hostless:
+            raise ImproperlyConfigured(
+                'Database URL variable(s) on this service parse without a host (broken or '
+                'socket-only URL): %(vars)s. In Railway: open Postgres → copy the full '
+                'DATABASE_URL value, or use Variable Reference to Postgres DATABASE_URL / '
+                'DATABASE_PUBLIC_URL. Also reference PGHOST, PGUSER, PGPASSWORD, PGDATABASE, '
+                'and PGPORT from Postgres onto this web service.'
+                % {'vars': ', '.join(hostless)}
+            )
         raise ImproperlyConfigured(
             'A database connection is required in production. '
             'On Railway: reference Postgres DATABASE_URL, DATABASE_PRIVATE_URL, or '
             'DATABASE_PUBLIC_URL (or PGHOST/PGUSER/PGPASSWORD/PGDATABASE/PGPORT) onto this web service.'
-        )
-    # Host-less URLs make libpq use a Unix socket inside the container (fails on Railway).
-    if not _database_url_has_hostname(_db_url):
-        raise ImproperlyConfigured(
-            'Database URL must include a host. Set DATABASE_URL, DATABASE_PRIVATE_URL, or '
-            'DATABASE_PUBLIC_URL to a full postgresql://…@HOST:PORT/… value from Postgres, '
-            'or reference PGHOST, PGUSER, PGPASSWORD, PGDATABASE (and PGPORT) from Postgres '
-            'onto this service. Socket-only URLs do not work on Railway.'
         )
     DATABASES = {'default': dj_database_url.config(default=_db_url)}
 elif USE_SQLITE:
