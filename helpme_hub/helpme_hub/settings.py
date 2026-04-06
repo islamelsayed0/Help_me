@@ -9,7 +9,7 @@ import json
 import os
 import sys
 import time
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlparse
 
 import dj_database_url
 import environ
@@ -202,6 +202,15 @@ if IS_PRODUCTION:
             'DATABASE_URL or DATABASE_PRIVATE_URL is required in production. '
             'On Railway: add a PostgreSQL service and reference DATABASE_URL (or PGHOST/PGUSER/'
             'PGPASSWORD/PGDATABASE) on this service.'
+        )
+    # Host-less URLs make libpq use a Unix socket inside the container (fails on Railway).
+    _norm_url = _db_url.replace('postgres://', 'postgresql://', 1).split('?', 1)[0]
+    _parsed_db = urlparse(_norm_url)
+    if not _parsed_db.hostname:
+        raise ImproperlyConfigured(
+            'DATABASE_URL must include a database host (e.g. …@postgres.railway.internal:5432/railway). '
+            'Socket-only URLs like postgresql:///dbname do not work on Railway. '
+            'Copy the full DATABASE_URL from your Railway Postgres service Variables tab.'
         )
     DATABASES = {'default': dj_database_url.config(default=_db_url)}
 elif USE_SQLITE:
