@@ -122,13 +122,32 @@ def _sanitize_connection_string(value):
     return s
 
 
+def _env_first_nonempty(*keys):
+    """First non-empty env value among keys (Railway uses PG* and POSTGRES_* names)."""
+    for key in keys:
+        raw = os.environ.get(key)
+        if raw is None:
+            continue
+        s = _sanitize_connection_string(str(raw))
+        if s:
+            return s
+    return ''
+
+
 def _database_url_from_pg_env():
-    """Build postgres URL from PG* vars (e.g. Railway/Heroku-style split credentials)."""
-    host = _sanitize_connection_string(os.environ.get('PGHOST', ''))
-    port = _sanitize_connection_string(os.environ.get('PGPORT', '')) or '5432'
-    user = _sanitize_connection_string(os.environ.get('PGUSER', ''))
-    password = os.environ.get('PGPASSWORD', '') or ''
-    name = _sanitize_connection_string(os.environ.get('PGDATABASE', ''))
+    """Build postgres URL from PG* or POSTGRES_* split vars (Railway references)."""
+    host = _env_first_nonempty('PGHOST', 'POSTGRES_HOST')
+    port = _env_first_nonempty('PGPORT', 'POSTGRES_PORT') or '5432'
+    user = _env_first_nonempty('PGUSER', 'POSTGRES_USER')
+    password = (
+        os.environ.get('PGPASSWORD')
+        if os.environ.get('PGPASSWORD') is not None
+        else os.environ.get('POSTGRES_PASSWORD')
+    )
+    if password is None:
+        password = ''
+    password = str(password)
+    name = _env_first_nonempty('PGDATABASE', 'POSTGRES_DB', 'POSTGRES_DATABASE')
     if not (host and user and name):
         return ''
     return (
@@ -192,16 +211,17 @@ if IS_PRODUCTION:
                 )
             raise ImproperlyConfigured(
                 'Database URL variable(s) parse without a host: %(vars)s.%(template)s '
-                'Fastest fix on Help_me: Variables → add references from Postgres for '
-                'PGHOST, PGUSER, PGPASSWORD, PGDATABASE, and PGPORT (the app will use those '
-                'even if DATABASE_URL is wrong). Or replace DATABASE_URL with the full '
-                'postgresql://…@HOST:PORT/… string from the Postgres service (Connect tab).'
+                'On Help_me, add Variable References from Postgres for either: '
+                'PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGPORT — or the same values under '
+                'POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT. '
+                'Or delete the bad DATABASE_URL and reference Postgres DATABASE_URL / '
+                'DATABASE_PUBLIC_URL only.'
                 % {'vars': ', '.join(hostless), 'template': hint}
             )
         raise ImproperlyConfigured(
             'A database connection is required in production. '
-            'On Railway: reference Postgres DATABASE_URL, DATABASE_PRIVATE_URL, or '
-            'DATABASE_PUBLIC_URL (or PGHOST/PGUSER/PGPASSWORD/PGDATABASE/PGPORT) onto this web service.'
+            'On Railway: reference Postgres DATABASE_* URL or PG*/POSTGRES_* host variables '
+            'onto this web service.'
         )
     DATABASES = {'default': dj_database_url.config(default=_db_url)}
 elif USE_SQLITE:
