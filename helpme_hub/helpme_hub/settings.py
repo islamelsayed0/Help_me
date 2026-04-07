@@ -6,6 +6,7 @@ Generated for Phase 1: Foundation
 
 from pathlib import Path
 import os
+import re
 import sys
 from urllib.parse import quote_plus
 
@@ -167,6 +168,31 @@ def _database_url_has_hostname(url):
     return bool(host)
 
 
+def _repair_postgres_url_missing_host(url):
+    """
+    postgresql://user:pass@/dbname (no host) → insert PGHOST:PORT from env.
+    Railway sometimes supplies this shape; PGHOST may be referenced separately.
+    """
+    if not url or _database_url_has_hostname(url):
+        return url
+    host = _env_first_nonempty('PGHOST', 'POSTGRES_HOST')
+    if not host:
+        return url
+    port = _env_first_nonempty('PGPORT', 'POSTGRES_PORT') or '5432'
+    m = re.match(
+        r'^(postgres(?:ql)?://[^@]+)@/([^?#]*)(.*)$',
+        url.strip(),
+        re.IGNORECASE,
+    )
+    if not m:
+        return url
+    prefix, dbpath, rest = m.group(1), m.group(2), m.group(3)
+    dbname = dbpath.lstrip('/')
+    if not dbname:
+        return url
+    return f'{prefix}@{host}:{port}/{dbname}{rest}'
+
+
 def _railway_database_url_candidates():
     """Ordered list of (env_key, value) for Railway-style URL vars (no secrets logged elsewhere)."""
     keys = ('DATABASE_URL', 'DATABASE_PRIVATE_URL', 'DATABASE_PUBLIC_URL')
@@ -179,6 +205,12 @@ def _resolve_database_url():
     for _key, url in candidates:
         if url and _database_url_has_hostname(url):
             return url, 'env_url'
+
+    for _key, url in candidates:
+        if url:
+            repaired = _repair_postgres_url_missing_host(url)
+            if repaired != url and _database_url_has_hostname(repaired):
+                return repaired, 'env_url_repaired'
 
     built = _database_url_from_pg_env()
     bad_direct = any(u for _k, u in candidates if u and not _database_url_has_hostname(u))
@@ -211,11 +243,11 @@ if IS_PRODUCTION:
                 )
             raise ImproperlyConfigured(
                 'Database URL variable(s) parse without a host: %(vars)s.%(template)s '
-                'On Help_me, add Variable References from Postgres for either: '
-                'PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGPORT — or the same values under '
-                'POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT. '
-                'Or delete the bad DATABASE_URL and reference Postgres DATABASE_URL / '
-                'DATABASE_PUBLIC_URL only.'
+                'On Help_me → Postgres service → Variables: use "Variable Reference" to add '
+                'POSTGRES_HOST (or PGHOST), POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, '
+                'POSTGRES_PORT. Or remove DATABASE_URL and reference Postgres DATABASE_PUBLIC_URL. '
+                'If this text does not mention POSTGRES_HOST, your deploy is an old commit—'
+                'push the latest settings.py from Git and redeploy.'
                 % {'vars': ', '.join(hostless), 'template': hint}
             )
         raise ImproperlyConfigured(
