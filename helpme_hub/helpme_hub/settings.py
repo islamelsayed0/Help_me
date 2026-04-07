@@ -112,13 +112,23 @@ WSGI_APPLICATION = 'helpme_hub.wsgi.application'
 # Set USE_SQLITE=True in .env for local SQLite. Production must use DATABASE_URL from Railway (or similar).
 
 
+def _sanitize_connection_string(value):
+    """Strip BOM / wrapping quotes so pasted Railway URLs parse correctly."""
+    if not value:
+        return ''
+    s = value.strip().lstrip('\ufeff')
+    while len(s) >= 2 and s[0] == s[-1] and s[0] in ('"', "'"):
+        s = s[1:-1].strip()
+    return s
+
+
 def _database_url_from_pg_env():
     """Build postgres URL from PG* vars (e.g. Railway/Heroku-style split credentials)."""
-    host = os.environ.get('PGHOST', '').strip()
-    port = os.environ.get('PGPORT', '').strip() or '5432'
-    user = os.environ.get('PGUSER', '').strip()
-    password = os.environ.get('PGPASSWORD', '')
-    name = os.environ.get('PGDATABASE', '').strip()
+    host = _sanitize_connection_string(os.environ.get('PGHOST', ''))
+    port = _sanitize_connection_string(os.environ.get('PGPORT', '')) or '5432'
+    user = _sanitize_connection_string(os.environ.get('PGUSER', ''))
+    password = os.environ.get('PGPASSWORD', '') or ''
+    name = _sanitize_connection_string(os.environ.get('PGDATABASE', ''))
     if not (host and user and name):
         return ''
     return (
@@ -141,7 +151,7 @@ def _database_url_has_hostname(url):
 def _railway_database_url_candidates():
     """Ordered list of (env_key, value) for Railway-style URL vars (no secrets logged elsewhere)."""
     keys = ('DATABASE_URL', 'DATABASE_PRIVATE_URL', 'DATABASE_PUBLIC_URL')
-    return [(k, env.str(k, default='').strip()) for k in keys]
+    return [(k, _sanitize_connection_string(env.str(k, default=''))) for k in keys]
 
 
 def _resolve_database_url():
@@ -173,13 +183,20 @@ if IS_PRODUCTION:
             if u and not _database_url_has_hostname(u)
         ]
         if hostless:
+            raw_db = os.environ.get('DATABASE_URL') or ''
+            hint = ''
+            if '${' in raw_db or '{{' in raw_db:
+                hint = (
+                    ' DATABASE_URL looks like an unresolved template (${{…}}): in Railway use '
+                    '"Variable Reference" from the Postgres service, not a literal placeholder string.'
+                )
             raise ImproperlyConfigured(
-                'Database URL variable(s) on this service parse without a host (broken or '
-                'socket-only URL): %(vars)s. In Railway: open Postgres → copy the full '
-                'DATABASE_URL value, or use Variable Reference to Postgres DATABASE_URL / '
-                'DATABASE_PUBLIC_URL. Also reference PGHOST, PGUSER, PGPASSWORD, PGDATABASE, '
-                'and PGPORT from Postgres onto this web service.'
-                % {'vars': ', '.join(hostless)}
+                'Database URL variable(s) parse without a host: %(vars)s.%(template)s '
+                'Fastest fix on Help_me: Variables → add references from Postgres for '
+                'PGHOST, PGUSER, PGPASSWORD, PGDATABASE, and PGPORT (the app will use those '
+                'even if DATABASE_URL is wrong). Or replace DATABASE_URL with the full '
+                'postgresql://…@HOST:PORT/… string from the Postgres service (Connect tab).'
+                % {'vars': ', '.join(hostless), 'template': hint}
             )
         raise ImproperlyConfigured(
             'A database connection is required in production. '
