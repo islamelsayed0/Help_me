@@ -16,7 +16,18 @@ Do not paste unresolved placeholders or host-less values. A valid value must loo
 
 `postgresql://user:password@host:port/dbname`
 
-## 2) Remove conflicting variables
+## 2) Project Shared Variables (important)
+
+If you use **Project → Settings → Shared Variables**, do **not** paste a literal Postgres URL that is missing `host:port` (for example `postgresql://user:pass@:/railway`). That breaks every service that inherits those variables.
+
+Prefer either:
+
+- **Variable references** (recommended): `DATABASE_URL="${{Postgres.DATABASE_PUBLIC_URL}}"` and the same for `DATABASE_PRIVATE_URL` if you need it, or
+- Remove database keys from Shared Variables and set them only on the **web** and **Postgres** services.
+
+Also add **`DATABASE_PUBLIC_URL`** on the web service referencing Postgres `DATABASE_PUBLIC_URL` if your other URLs are still host-less.
+
+## 3) Remove conflicting variables
 
 If present and invalid, clear or fix:
 
@@ -24,7 +35,7 @@ If present and invalid, clear or fix:
 - `DATABASE_PUBLIC_URL`
 - any host-less form like `postgresql://user:pass@/dbname`
 
-## 3) Optional split-variable fallback
+## 4) Optional split-variable fallback
 
 If you prefer split vars, all of these must be set as Postgres references:
 
@@ -36,7 +47,7 @@ If you prefer split vars, all of these must be set as Postgres references:
 
 (`PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PGPORT` are also supported.)
 
-## 4) Redeploy and validate
+## 5) Redeploy and validate
 
 After saving variables:
 

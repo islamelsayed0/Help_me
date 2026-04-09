@@ -197,8 +197,12 @@ def _railway_database_url_candidates():
     """
     URL-shaped vars as injected by the host (Railway).
     Read os.environ directly so values match the platform (django-environ is not involved).
+    On Railway, prefer DATABASE_PUBLIC_URL first: private/shared DATABASE_URL values are
+    sometimes host-less (postgresql://user:pass@/db) while the public proxy URL includes host:port.
     """
     keys = ('DATABASE_URL', 'DATABASE_PRIVATE_URL', 'DATABASE_PUBLIC_URL')
+    if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY'):
+        keys = ('DATABASE_PUBLIC_URL', 'DATABASE_URL', 'DATABASE_PRIVATE_URL')
     return [(k, _sanitize_connection_string(os.environ.get(k, ''))) for k in keys]
 
 
