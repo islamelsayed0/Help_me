@@ -123,6 +123,17 @@ def _sanitize_connection_string(value):
     return s
 
 
+def _is_unresolved_railway_reference(value):
+    """
+    True when env still contains a Railway ${{ … }} template (substitution did not run).
+    Treat as unset so we do not mis-classify these as host-less postgres URLs.
+    """
+    if not value:
+        return False
+    s = value.strip()
+    return '${{' in s and '}}' in s
+
+
 def _env_first_nonempty(*keys):
     """First non-empty env value among keys (Railway uses PG* and POSTGRES_* names)."""
     for key in keys:
@@ -171,7 +182,8 @@ def _database_url_has_hostname(url):
 def _repair_postgres_url_missing_host(url):
     """
     postgresql://user:pass@/dbname (no host) → insert PGHOST:PORT from env.
-    Railway sometimes supplies this shape; PGHOST may be referenced separately.
+    Also handles postgresql://user:pass@:/dbname (empty host before :/path) which
+    Railway occasionally emits when the hostname is missing from the URL string.
     """
     if not url or _database_url_has_hostname(url):
         return url
@@ -179,18 +191,30 @@ def _repair_postgres_url_missing_host(url):
     if not host:
         return url
     port = _env_first_nonempty('PGPORT', 'POSTGRES_PORT') or '5432'
+    stripped = url.strip()
     m = re.match(
         r'^(postgres(?:ql)?://[^@]+)@/([^?#]*)(.*)$',
-        url.strip(),
+        stripped,
         re.IGNORECASE,
     )
-    if not m:
-        return url
-    prefix, dbpath, rest = m.group(1), m.group(2), m.group(3)
-    dbname = dbpath.lstrip('/')
-    if not dbname:
-        return url
-    return f'{prefix}@{host}:{port}/{dbname}{rest}'
+    if m:
+        prefix, dbpath, rest = m.group(1), m.group(2), m.group(3)
+        dbname = dbpath.lstrip('/')
+        if not dbname:
+            return url
+        return f'{prefix}@{host}:{port}/{dbname}{rest}'
+    m2 = re.match(
+        r'^(postgres(?:ql)?://[^@]+)@:/([^?#]*)(.*)$',
+        stripped,
+        re.IGNORECASE,
+    )
+    if m2:
+        prefix, dbname, rest = m2.group(1), m2.group(2), m2.group(3)
+        dbname = dbname.strip()
+        if not dbname:
+            return url
+        return f'{prefix}@{host}:{port}/{dbname}{rest}'
+    return url
 
 
 def _railway_database_url_candidates():
@@ -203,7 +227,14 @@ def _railway_database_url_candidates():
     keys = ('DATABASE_URL', 'DATABASE_PRIVATE_URL', 'DATABASE_PUBLIC_URL')
     if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY'):
         keys = ('DATABASE_PUBLIC_URL', 'DATABASE_URL', 'DATABASE_PRIVATE_URL')
-    return [(k, _sanitize_connection_string(os.environ.get(k, ''))) for k in keys]
+    out = []
+    for k in keys:
+        raw = os.environ.get(k, '')
+        s = _sanitize_connection_string(raw)
+        if _is_unresolved_railway_reference(s):
+            s = ''
+        out.append((k, s))
+    return out
 
 
 def _resolve_database_url():
