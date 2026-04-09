@@ -194,9 +194,12 @@ def _repair_postgres_url_missing_host(url):
 
 
 def _railway_database_url_candidates():
-    """Ordered list of (env_key, value) for Railway-style URL vars (no secrets logged elsewhere)."""
+    """
+    URL-shaped vars as injected by the host (Railway).
+    Read os.environ directly so values match the platform (django-environ is not involved).
+    """
     keys = ('DATABASE_URL', 'DATABASE_PRIVATE_URL', 'DATABASE_PUBLIC_URL')
-    return [(k, _sanitize_connection_string(env.str(k, default=''))) for k in keys]
+    return [(k, _sanitize_connection_string(os.environ.get(k, ''))) for k in keys]
 
 
 def _resolve_database_url():
@@ -242,12 +245,11 @@ if IS_PRODUCTION:
                     '"Variable Reference" from the Postgres service, not a literal placeholder string.'
                 )
             raise ImproperlyConfigured(
-                'Database URL variable(s) parse without a host: %(vars)s.%(template)s '
-                'On Help_me → Postgres service → Variables: use "Variable Reference" to add '
-                'POSTGRES_HOST (or PGHOST), POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, '
-                'POSTGRES_PORT. Or remove DATABASE_URL and reference Postgres DATABASE_PUBLIC_URL. '
-                'If this text does not mention POSTGRES_HOST, your deploy is an old commit—'
-                'push the latest settings.py from Git and redeploy.'
+                'Database URL variable(s) are set but have no hostname: %(vars)s.%(template)s '
+                'Fix: Help_me → Variables → set DATABASE_URL using Railway “Reference” to Postgres '
+                'DATABASE_URL or DATABASE_PUBLIC_URL (must look like postgresql://user:pass@host:port/db). '
+                'Or add references from Postgres for POSTGRES_HOST, POSTGRES_USER, '
+                'POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT (or PG* equivalents).'
                 % {'vars': ', '.join(hostless), 'template': hint}
             )
         raise ImproperlyConfigured(
