@@ -361,6 +361,7 @@ def escalate_chat_view(request, chat_id):
 
 @login_required
 @chat_membership_required
+@chat_owner_required
 @require_http_methods(['POST'])
 def mark_messages_read_view(request, chat_id):
     """Mark all messages as read in a chat."""
@@ -378,6 +379,7 @@ def mark_messages_read_view(request, chat_id):
 
 @login_required
 @chat_membership_required
+@chat_owner_required
 def poll_messages_view(request, chat_id):
     """Poll for new messages in a chat (AJAX endpoint)."""
     chat = get_object_or_404(Chat, id=chat_id)

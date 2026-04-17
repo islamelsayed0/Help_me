@@ -29,12 +29,10 @@ IS_PRODUCTION = (not DEBUG) or (os.environ.get('RAILWAY_ENVIRONMENT', '') == 'pr
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env.str('SECRET_KEY', default='').strip()
-if IS_PRODUCTION and not SECRET_KEY:
-    raise ImproperlyConfigured(
-        'SECRET_KEY must be set via environment variable in production.'
-    )
 if not SECRET_KEY:
-    SECRET_KEY = 'django-insecure-dev-only-not-for-production'
+    raise ImproperlyConfigured(
+        'SECRET_KEY must be set via environment variable (.env locally, platform env in production).'
+    )
 
 _allowed = env.str('ALLOWED_HOSTS', default='localhost,127.0.0.1,.up.railway.app')
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]

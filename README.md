@@ -127,14 +127,17 @@ For detailed setup instructions, see [DEVELOPMENT.md](DEVELOPMENT.md)
 
 ## Deployment
 
-The application is designed to deploy on Railway. See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+The application is designed to deploy on Railway.
 
 ### Railway Setup
-1. Create Railway account and connect GitHub
-2. Create PostgreSQL database service
-3. Create web service and link to database
-4. Set environment variables in Railway dashboard
-5. Deploy automatically on git push
+1. Create a Railway PostgreSQL service and copy its connection string.
+2. Create a Railway web service from this repository.
+3. Set environment variables from `helpme_hub/.env.example` in Railway.
+4. Ensure `DATABASE_URL` is set using a Railway Postgres variable reference.
+5. Set `DATABASE_URL` to your Railway Postgres URL.
+6. Redeploy and verify health, auth, and ticket flows.
+
+See [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md) and `helpme_hub/RAILWAY_ENV_SETUP.md` for full deployment details.
 
 ## Development Phases
 

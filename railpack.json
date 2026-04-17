@@ -2,13 +2,5 @@
   "$schema": "https://schema.railpack.com",
   "packages": {
     "python": "3.11"
-  },
-  "steps": {
-    "install": {
-      "commands": [
-        "...",
-        "pip install requests PyJWT --no-cache-dir"
-      ]
-    }
   }
 }

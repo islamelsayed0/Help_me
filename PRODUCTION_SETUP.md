@@ -174,15 +174,13 @@ MEDIA_URL=/media/
 ## Step 2: Railway Deployment
 
 1. **Connect your GitHub repository** to Railway.
-2. **Set the Root Directory** (critical):
-   - In your Railway **Web Service** → **Settings** → **General**, set **Root Directory** to `helpme_hub`.
-   - This makes Railway run build and start commands from the Django project folder (where `manage.py`, `requirements.txt`, and `Procfile` live).
+2. **Set the Root Directory** (pick one; both are supported):
+   - **Option A — Repository root (recommended):** leave Root Directory **empty** (or `.`). Railway uses the root `Procfile`, which runs `bash scripts/railway_web.sh` (migrate → `collectstatic` → gunicorn). Dependencies come from the root `requirements.txt`.
+   - **Option B — `helpme_hub` folder:** set Root Directory to `helpme_hub`. Railway uses `helpme_hub/Procfile`, which runs `bash start.sh` (same migrate → `collectstatic` → gunicorn). Dependencies come from `helpme_hub/requirements.txt`.
 3. **Create a PostgreSQL service** in Railway and link it to your Web Service (Railway will set `DATABASE_URL` automatically).
 4. **Set environment variables** in Railway (see Step 1). Required for production:
    - `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS=your-app.up.railway.app,*.railway.app` (replace with your actual Railway host).
-5. **Build and start:** If Root Directory is `helpme_hub`, Railway will use `helpme_hub/Procfile` and `helpme_hub/requirements.txt`. No need to set custom Build/Start commands unless you want to run migrations or collectstatic in the build:
-   - Optional build command: `pip install -r requirements.txt && python manage.py collectstatic --noinput`
-   - Start is handled by the Procfile: `gunicorn helpme_hub.wsgi:application --bind 0.0.0.0:$PORT`
+5. **Start command:** If you use `railway.json` from the repo root, `deploy.startCommand` is already `bash scripts/railway_web.sh`. Otherwise rely on the `Procfile` for your chosen root. On every deploy/start, **`collectstatic` runs** so `/static/` CSS and JS load correctly (WhiteNoise).
 6. **Deploy!** Railway will automatically deploy on git push.
 
 ## Step 3: Post-Deployment Setup

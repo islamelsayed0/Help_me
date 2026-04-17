@@ -4,6 +4,6 @@
     "builder": "RAILPACK"
   },
   "deploy": {
-    "startCommand": "cd helpme_hub && python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn helpme_hub.wsgi:application --bind 0.0.0.0:$PORT"
+    "startCommand": "bash scripts/railway_web.sh"
   }
 }
