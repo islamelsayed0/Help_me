@@ -54,6 +54,7 @@ After saving variables:
 1. Redeploy the web service.
 2. Verify logs no longer include:
    - `ImproperlyConfigured: Database URL variable(s) are set but have no hostname`
-3. Run migrations once startup is healthy:
+3. If you see that error mentioning **`DATABASE_PUBLIC_URL`** only: your web service has a **bad or host-less** public URL (often a mistaken Shared Variable or manual paste). **Delete `DATABASE_PUBLIC_URL`** on the web service unless it is a proper Railway reference, and set **`DATABASE_URL`** to a **Reference** from Postgres → `DATABASE_URL` (must contain `@host:port/`).
+4. Run migrations once startup is healthy:
    - `python manage.py migrate --noinput`
 

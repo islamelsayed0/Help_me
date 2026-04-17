@@ -217,22 +217,24 @@ def _repair_postgres_url_missing_host(url):
 
 def _railway_database_url_candidates():
     """
-    URL-shaped vars as injected by the host (Railway).
-    Read os.environ directly so values match the platform (django-environ is not involved).
-    On Railway, prefer DATABASE_PUBLIC_URL first: private/shared DATABASE_URL values are
-    sometimes host-less (postgresql://user:pass@/db) while the public proxy URL includes host:port.
+    Non-empty DATABASE_* URL vars from the environment (Railway injects several).
+
+    Order: any URL that already includes a hostname comes first, then host-less
+    values (so a misconfigured DATABASE_PUBLIC_URL does not block a valid
+    DATABASE_URL / DATABASE_PRIVATE_URL).
     """
     keys = ('DATABASE_URL', 'DATABASE_PRIVATE_URL', 'DATABASE_PUBLIC_URL')
-    if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY'):
-        keys = ('DATABASE_PUBLIC_URL', 'DATABASE_URL', 'DATABASE_PRIVATE_URL')
-    out = []
+    pairs = []
     for k in keys:
         raw = os.environ.get(k, '')
         s = _sanitize_connection_string(raw)
         if _is_unresolved_railway_reference(s):
             s = ''
-        out.append((k, s))
-    return out
+        if s:
+            pairs.append((k, s))
+    with_host = [(k, u) for k, u in pairs if _database_url_has_hostname(u)]
+    without_host = [(k, u) for k, u in pairs if not _database_url_has_hostname(u)]
+    return with_host + without_host
 
 
 def _resolve_database_url():
@@ -279,10 +281,12 @@ if IS_PRODUCTION:
                 )
             raise ImproperlyConfigured(
                 'Database URL variable(s) are set but have no hostname: %(vars)s.%(template)s '
-                'Fix: Help_me → Variables → set DATABASE_URL using Railway “Reference” to Postgres '
-                'DATABASE_URL or DATABASE_PUBLIC_URL (must look like postgresql://user:pass@host:port/db). '
-                'Or add references from Postgres for POSTGRES_HOST, POSTGRES_USER, '
-                'POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT (or PG* equivalents).'
+                'Fix in Railway → Web service → Variables: add `DATABASE_URL` using Variable '
+                'Reference from your Postgres service (value must look like '
+                'postgresql://user:pass@host:port/db). Remove or fix any host-less '
+                '`DATABASE_PUBLIC_URL` / `DATABASE_PRIVATE_URL` entries. '
+                'Alternatively reference POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, '
+                'POSTGRES_DB, POSTGRES_PORT (or PG* equivalents) from Postgres onto this service.'
                 % {'vars': ', '.join(hostless), 'template': hint}
             )
         raise ImproperlyConfigured(
